@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wavefunctions &mdash; zkit 0.1.0b1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=e4e59774"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Transition dipole moments" href="tdm.html" />
+    <link rel="prev" title="Input and output formats" href="io-formats.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            zkit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command-line interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python-api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io-formats.html">Input and output formats</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Wavefunctions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#read-snapshots">Read snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reconstruct-a-snapshot">Reconstruct a snapshot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reconstruct-a-static-eigenstate">Reconstruct a static eigenstate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exact-norm-via-gauss-quadrature">Exact norm via Gauss quadrature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vtk-export">VTK export</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tdm.html">Transition dipole moments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wigner.html">Wigner and phase-space analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics-outputs.html">Physics outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">zkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Wavefunctions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/wavefunctions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="wavefunctions">
+<h1>Wavefunctions<a class="headerlink" href="#wavefunctions" title="Link to this heading"></a></h1>
+<p>zkit reads two kinds of wavefunction outputs:</p>
+<ol class="arabic simple">
+<li><p>Time-series snapshots from <code class="docutils literal notranslate"><span class="pre">td/wfs_&lt;input&gt;.h5</span></code></p></li>
+<li><p>Static eigenstates from <code class="docutils literal notranslate"><span class="pre">static/EigenData_&lt;input&gt;.h5</span></code></p></li>
+</ol>
+<p>Both contain IGA B-spline coefficients, not real-space arrays. zkit evaluates
+the basis with igakit so you can plot or export on a regular grid.</p>
+<section id="read-snapshots">
+<h2>Read snapshots<a class="headerlink" href="#read-snapshots" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">zkit.io.wavefunction</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_wfs</span>
+
+<span class="n">wfs</span> <span class="o">=</span> <span class="n">read_wfs</span><span class="p">(</span><span class="s2">&quot;td/wfs_h2p.inp.h5&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;snapshots:&quot;</span><span class="p">,</span> <span class="n">wfs</span><span class="o">.</span><span class="n">n_snapshots</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data shape:&quot;</span><span class="p">,</span> <span class="n">wfs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;dimension:&quot;</span><span class="p">,</span> <span class="n">wfs</span><span class="o">.</span><span class="n">dimension</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">wfs.data</span></code> is <code class="docutils literal notranslate"><span class="pre">(n_snapshots,</span> <span class="pre">n_dof)</span></code> complex coefficients in the IGA tensor
+order used by PetIGA.</p>
+</section>
+<section id="reconstruct-a-snapshot">
+<h2>Reconstruct a snapshot<a class="headerlink" href="#reconstruct-a-snapshot" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">zkit.io.wfs_field</span><span class="w"> </span><span class="kn">import</span> <span class="n">reconstruct_wfs</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">reconstruct_wfs</span><span class="p">(</span>
+    <span class="s2">&quot;td/wfs_h2p.inp.h5&quot;</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">npoints</span><span class="o">=</span><span class="mi">240</span><span class="p">,</span>
+    <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;dim&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;psi&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Returned keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dim</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">step</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psi</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Re</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Im</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">abs2</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SplineDegree</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nfuncs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">knots</span></code></p></li>
+</ul>
+</section>
+<section id="reconstruct-a-static-eigenstate">
+<h2>Reconstruct a static eigenstate<a class="headerlink" href="#reconstruct-a-static-eigenstate" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">zkit.io.eigen</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_eigen</span>
+
+<span class="n">eigen</span> <span class="o">=</span> <span class="n">read_eigen</span><span class="p">(</span><span class="s2">&quot;static/EigenData_h2p.inp.h5&quot;</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">eigen</span><span class="o">.</span><span class="n">reconstruct</span><span class="p">(</span><span class="n">istate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">240</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s2">&quot;psi&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="exact-norm-via-gauss-quadrature">
+<h2>Exact norm via Gauss quadrature<a class="headerlink" href="#exact-norm-via-gauss-quadrature" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">zkit.io.wfs_field</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_wfs_norm</span>
+
+<span class="n">norm</span> <span class="o">=</span> <span class="n">compute_wfs_norm</span><span class="p">(</span><span class="s2">&quot;td/wfs_h2p.inp.h5&quot;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nq</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">nq=5</span></code> is exact for spline degree &lt;= 9. Higher degrees need larger <code class="docutils literal notranslate"><span class="pre">nq</span></code>.</p>
+</section>
+<section id="vtk-export">
+<h2>VTK export<a class="headerlink" href="#vtk-export" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">zkit.io.wfs_field</span><span class="w"> </span><span class="kn">import</span> <span class="n">reconstruct_wfs</span><span class="p">,</span> <span class="n">wfs_to_vtk</span>
+
+<span class="n">res</span> <span class="o">=</span> <span class="n">reconstruct_wfs</span><span class="p">(</span><span class="s2">&quot;td/wfs_h2p.inp.h5&quot;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<span class="n">wfs_to_vtk</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="s2">&quot;figures/wfs.vts&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Supported extensions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.vts</span></code> StructuredGrid</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.vtu</span></code> UnstructuredGrid</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.vtk</span></code> legacy StructuredGrid</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="io-formats.html" class="btn btn-neutral float-left" title="Input and output formats" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tdm.html" class="btn btn-neutral float-right" title="Transition dipole moments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Dr. Zakaria Dahbi.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

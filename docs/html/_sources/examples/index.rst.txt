@@ -1,0 +1,12 @@
+Examples
+========
+
+This section contains end-to-end workflows showing how to use zkit with real
+TDSEZ outputs.
+
+.. toctree::
+   :maxdepth: 2
+
+   realistic-campaign
+   tdm-campaign
+   wigner-campaign
