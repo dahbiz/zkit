@@ -1,0 +1,169 @@
+Input and output formats
+========================
+
+This page documents the exact HDF5 layouts produced by TDSEZ and consumed by
+zkit.
+
+``static/EigenData_<input>.h5``
+-------------------------------
+
+Created by ``TDSEZCore::Output()``.
+
+Top-level datasets:
+
+- ``/spectrum`` — 1-D float vector of converged eigenvalues in Hartree.
+- ``/psi_0``, ``/psi_1``, ... — 1-D or 2-D arrays holding IGA coefficients.
+  When 2-D, shape is ``(n_dof, 2)`` with columns ``[Re, Im]``.
+- ``/knots_x``, ``/knots_y``, ``/knots_z`` — 1-D compact knot vectors from PetIGA.
+
+Top-level group:
+
+- ``/run_metadata`` — attributes:
+
+  - ``code_version``
+  - ``input_file``
+  - ``units``
+  - ``Dimension``
+  - ``SplineDegree``
+  - ``Nelements``
+  - ``LMinX``, ``LMaxX``, ``LMinY``, ``LMaxY``, ``LMinZ``, ``LMaxZ``
+  - ``Hbar``, ``Charge``
+  - ``TargetEigenvalue``
+  - ``NBoundStatesSave``
+  - ``NBoundStates``
+  - ``state_format``
+
+- ``/run_metadata/eig_residual`` — 1-D relative error per saved state.
+
+Reader:
+
+.. code-block:: python
+
+   from zkit.io.eigen import read_eigen
+
+   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   print(eigen.values)
+   print(eigen.vectors.shape)
+   print(eigen.dimension)
+
+Dimension is inferred from:
+
+1. ``/run_metadata/Dimension``
+2. number of ``/knots_*`` datasets
+3. dipole column width in time-evolution files
+
+``td/TimeEvolutionData_<input>.h5``
+-----------------------------------
+
+Created by ``TDSEZManager::WriteHDF5()``.
+
+Top-level datasets:
+
+- ``dipoles``
+- ``populations``
+- ``energies``
+- ``currents``
+- ``autocorrelation``
+
+All datasets are 2-D with first dimension = recorded steps.
+
+Column layouts by dimension:
+
+.. list-table:: Column layouts by dimension
+   :header-rows: 1
+
+   * - Dataset
+     - 1D width
+     - 2D width
+     - 3D width
+   * - dipoles
+     - 4
+     - 7
+     - 10
+   * - populations
+     - 1 + N_pop
+     - 1 + N_pop
+     - 1 + N_pop
+   * - energies
+     - 7
+     - 7
+     - 7
+   * - currents
+     - 11
+     - 11
+     - 15
+   * - autocorrelation
+     - 3
+     - 3
+     - 3
+
+Reader:
+
+.. code-block:: python
+
+   from zkit.io.evolution import read_evolution
+
+   evolution = read_evolution("td/TimeEvolutionData_h2p.inp.h5")
+   print(evolution.dimension)
+   print(evolution.time.shape)
+   print(evolution.dipoles.shape)
+   print(evolution.energies.shape)
+   print(evolution.currents.shape)
+   print(evolution.autocorrelation.shape)
+
+``td/wfs_<input>.h5``
+---------------------
+
+Created by the TS monitor via a collective ``VecView`` into an HDF5 viewer.
+
+Layouts:
+
+- Group ``wavefunction`` with integer datasets ``0``, ``1``, ..., each with trailing
+  Re/Im dimension.
+- Flat top-level datasets with shape ``(n_snapshots, <spatial...>, 2)``.
+
+Reader:
+
+.. code-block:: python
+
+   from zkit.io.wavefunction import read_wfs
+
+   wfs = read_wfs("td/wfs_h2p.inp.h5")
+   print(wfs.n_snapshots)
+   print(wfs.data.shape)
+
+``ts_<input>.h5``
+-----------------
+
+Created by ``TSView``.
+
+Layout:
+
+- Group ``timestepper`` with integer datasets, or integer datasets at top level.
+
+Reader:
+
+.. code-block:: python
+
+   from zkit.io.ts import read_timeseries
+
+   ts = read_timeseries("ts_h2p.inp.h5")
+   print(ts.times)
+
+TDM outputs
+-----------
+
+TDSEZ emits:
+
+- ``static/TDM_Dx_<stem>.npy``
+- ``static/EigenEnergies_<stem>.npy``
+- ``static/States_<stem>.npy``
+
+Reader:
+
+.. code-block:: python
+
+   from zkit.io.tdm import read_tdm
+
+   tdm = read_tdm("static/EigenData_h2p.inp.h5")
+   print(tdm.keys())

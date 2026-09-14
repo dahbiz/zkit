@@ -1,0 +1,50 @@
+# ==========================================
+# TDSE / Laser Simulation Parameters
+# ==========================================
+
+# ------------------------
+# Spatial Grid Parameters
+# ------------------------
+Verbose           = 0
+Dimension         = 2
+Domain            = -700, 700
+SplineDegree      = 3
+NQuadratures      = 6     
+KnotSequence      = uniform
+NSplines          = 1900
+Mass              = 1.0 - 0.84*exp(-2.772589*(x^2+y^2)/377.93999999999994^2)
+Planck            = 1.0
+Charge            = 1.0
+
+# ------------------------
+# Solver Parameters
+# ------------------------
+UseDirectSolve    = 1
+TargetEigenvalue  = -0.25
+NBoundStates      = 200
+
+# ------------------------
+# Problem Expressions
+# ------------------------
+Potential            = -0.25*exp(-2.772589*(x^2+y^2)/377.93999999999994^2)
+PotentialDerivativeX =  2.0*0.25*2.772589/377.93999999999994^2 * x * exp(-2.772589*(x^2+y^2)/377.93999999999994^2)
+PotentialDerivativeY =  2.0*0.25*2.772589/377.93999999999994^2 * y * exp(-2.772589*(x^2+y^2)/377.93999999999994^2)
+
+# ------------------------
+# Laser / Field Parameters
+# ------------------------
+Ampx              = 0.0053384
+Ampy              = 0.0053384
+Omegax            = 0.009694
+Omegay            = 0.009694
+CEPx              = 0.0
+CEPy              = 0.0
+Polarization      = xy
+LaserX            = (t<=6201.21) ? Ampx * cos(Omegax*t + CEPx) *  sin(pi * t/6201.21)^2 : 0.0
+LaserY            = 0.0
+TimeStep          = 0.04
+FinalTime         = 6849.0
+EnablePropagation = 1
+EnableCAP         = 1 
+CAPKmin           = 0.3       
+OutputStrideWFS   = 7000

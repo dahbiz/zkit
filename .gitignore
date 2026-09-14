@@ -1,0 +1,68 @@
+# Bytecode and interpreter caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Native extensions
+*.so
+*.dylib
+
+# Packaging artifacts
+.eggs/
+*.egg-info/
+build/
+dist/
+wheelhouse/
+pip-wheel-metadata/
+
+# Test, coverage, and type-checker caches
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.hypothesis/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.tox/
+.nox/
+
+# Sphinx output
+docs/_build/
+examples/output/
+docs/html/
+docs/.doctrees/
+
+# Environments and local configuration
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# TDSEZ-generated data and local native builds
+*.h5
+static/
+td/
+_tdsez_build/
