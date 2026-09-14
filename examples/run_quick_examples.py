@@ -11,10 +11,13 @@ from pathlib import Path
 import numpy as np
 
 from zkit.io.eigen import read_eigen
+from zkit.io.evolution import read_evolution
 
 CASES = {
     "1d": ("harmonic_oscillator_1d.inp", np.array([0.1, 0.3, 0.5]), 1),
     "2d": ("harmonic_oscillator_2d.inp", np.array([0.2, 0.4, 0.4, 0.6, 0.6, 0.6]), 2),
+    "heterostructure": ("finite_quantum_well_heterostructure_1d.inp", None, 1),
+    "rabi": ("ho1d_rabi.inp", None, 1),
 }
 
 
@@ -33,6 +36,77 @@ def plot_spectrum(values: np.ndarray, expected: np.ndarray, path: Path, title: s
     ax.legend()
     fig.tight_layout()
     fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def plot_heterostructure(values: np.ndarray, path: Path, profile_path: Path) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    x = np.linspace(-15.0, 15.0, 1200)
+    barrier = 0.6 * ((x < -4.0) | (x > 4.0))
+    mass = 1.0 + 0.2 * ((x < -4.0) | (x > 4.0))
+    np.savetxt(
+        profile_path,
+        np.column_stack((x, barrier, mass)),
+        delimiter=",",
+        header="x,potential,mass",
+        comments="",
+    )
+    fig, (potential_ax, mass_ax) = plt.subplots(
+        2, 1, figsize=(6, 5), sharex=True, height_ratios=(3, 1)
+    )
+    potential_ax.plot(x, barrier, color="tab:blue", label="conduction-band profile")
+    for index, energy in enumerate(values):
+        potential_ax.axhline(energy, color="tab:red", alpha=0.7, linewidth=0.9)
+        potential_ax.text(14.6, energy, f"E{index}", ha="right", va="bottom", fontsize=8)
+    potential_ax.set_ylabel("energy (a.u.)")
+    potential_ax.set_title("Finite quantum well heterostructure")
+    potential_ax.set_ylim(-0.03, 0.72)
+    potential_ax.grid(alpha=0.25)
+    potential_ax.legend(loc="upper right")
+    mass_ax.plot(x, mass, color="tab:orange")
+    mass_ax.set(xlabel="position (a.u.)", ylabel="m*(x)")
+    mass_ax.grid(alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    evolution = read_evolution(evolution_path)
+    populations = evolution.populations[:, 1:]
+    field = evolution.dipoles[:, 1]
+    dipole = evolution.dipoles[:, 2]
+    np.savetxt(
+        csv_path,
+        np.column_stack((evolution.time, populations, field, dipole)),
+        delimiter=",",
+        header="time,p0,p1,p2,field_x,dipole_x",
+        comments="",
+    )
+    fig, (population_ax, response_ax) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
+    for state, values in enumerate(populations.T):
+        population_ax.plot(evolution.time, values, label=f"P{state}")
+    population_ax.set_ylabel("bound-state population")
+    population_ax.set_ylim(-0.02, 1.05)
+    population_ax.grid(alpha=0.25)
+    population_ax.legend(ncol=3)
+    response_ax.plot(evolution.time, field, label="field E_x(t)", color="tab:orange")
+    response_ax.plot(evolution.time, dipole, label="dipole <x>", color="tab:blue")
+    response_ax.set(xlabel="time (a.u.)", ylabel="response (a.u.)")
+    response_ax.grid(alpha=0.25)
+    response_ax.legend()
+    fig.suptitle("Driven 1D oscillator: Rabi-style population transfer")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
     plt.close(fig)
 
 
@@ -61,7 +135,9 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
 
     eigen_path = case_dir / "static" / f"EigenData_{deck.name}.h5"
     eigen = read_eigen(eigen_path)
-    if eigen.dimension != dimension or not np.allclose(eigen.values, expected, atol=2e-5):
+    if eigen.dimension != dimension or (
+        expected is not None and not np.allclose(eigen.values, expected, atol=2e-5)
+    ):
         raise RuntimeError(
             f"Unexpected {case} spectrum: dimension={eigen.dimension}, values={eigen.values}"
         )
@@ -73,22 +149,38 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
         header="state,energy",
         comments="",
     )
-    plot_spectrum(
-        eigen.values,
-        expected,
-        case_dir / "spectrum.png",
-        f"TDSEZ {case} harmonic oscillator",
+    if case == "heterostructure":
+        plot_heterostructure(
+            eigen.values,
+            case_dir / "potential_and_levels.png",
+            case_dir / "profile.csv",
+        )
+    elif case == "rabi":
+        plot_rabi(
+            case_dir / "td" / f"TimeEvolutionData_{deck.name}.h5",
+            case_dir / "rabi-populations-response.png",
+            case_dir / "rabi-observables.csv",
+        )
+    else:
+        plot_spectrum(
+            eigen.values,
+            expected,
+            case_dir / "spectrum.png",
+            f"TDSEZ {case} harmonic oscillator",
+        )
+    error = (
+        f", max error {np.max(np.abs(eigen.values - expected)):.2e}" if expected is not None else ""
     )
-    print(
-        f"{case}: {eigen.n_states} states, max error {np.max(np.abs(eigen.values - expected)):.2e}, {elapsed:.2f}s"
-    )
+    print(f"{case}: {eigen.n_states} states{error}, {elapsed:.2f}s")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tdsez", type=Path, required=True, help="path to the TDSEZ executable")
     parser.add_argument("--output-dir", type=Path, default=Path("examples/output"))
-    parser.add_argument("--case", choices=["1d", "2d", "all"], default="all")
+    parser.add_argument(
+        "--case", choices=["1d", "2d", "heterostructure", "rabi", "all"], default="all"
+    )
     args = parser.parse_args()
     if not args.tdsez.is_file():
         parser.error(f"TDSEZ executable not found: {args.tdsez}")

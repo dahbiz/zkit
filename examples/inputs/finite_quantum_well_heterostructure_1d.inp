@@ -1,0 +1,22 @@
+# Fast 1D finite quantum well with a conduction-band offset and effective-mass mismatch.
+# The well occupies -4 < x < 4; barriers are 0.6 a.u. higher and 20% heavier.
+Verbose           = 0
+Dimension         = 1
+Domain            = -15.0, 15.0
+SplineDegree      = 5
+NQuadratures      = 8
+KnotSequence      = uniform
+NSplines          = 100
+Planck            = 1.0
+Charge            = 1.0
+Mass              = 1.0 + 0.2 * (((-x)>4.0?1:0) + ((x-4.0)>0?1:0))
+MassIsConstant    = 0
+Potential         = 0.6 * (((-x)>4.0?1:0) + ((x-4.0)>0?1:0))
+PotentialDerivativeX = 0.0
+UseDirectSolve    = 0
+TargetEigenvalue  = 0.0
+NBoundStates      = 4
+NBoundStatesSave  = 1
+EnablePropagation = 0
+EnableCAP         = 0
+Polarization      = x

@@ -26,6 +26,8 @@ zkit/
 ├── examples/
 │   ├── inputs/harmonic_oscillator_1d.inp
 │   ├── inputs/harmonic_oscillator_2d.inp
+│   ├── inputs/finite_quantum_well_heterostructure_1d.inp
+│   ├── inputs/ho1d_rabi.inp
 │   └── run_quick_examples.py
 ├── src/zkit/
 │   ├── io/
