@@ -92,6 +92,7 @@ def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
         header="time,p0,p1,p2,field_x,dipole_x",
         comments="",
     )
+    plot_observables(evolution, case_dir=output_path.parent)
     fig, (population_ax, response_ax) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
     for state, values in enumerate(populations.T):
         population_ax.plot(evolution.time, values, label=f"P{state}")
@@ -107,6 +108,55 @@ def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
     fig.suptitle("Driven 1D oscillator: Rabi-style population transfer")
     fig.tight_layout()
     fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_observables(evolution, case_dir: Path) -> None:
+    """Plot energy conservation, current decomposition, and spectra."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    time = evolution.time
+    energy = evolution.energies
+    current = evolution.currents
+    autocorrelation = evolution.autocorrelation[:, 1] + 1j * evolution.autocorrelation[:, 2]
+    dt = float(np.mean(np.diff(time)))
+    frequency = 2.0 * np.pi * np.fft.rfftfreq(time.size, dt)
+    dipole = evolution.dipoles[:, 2] - np.mean(evolution.dipoles[:, 2])
+    dipole_spectrum = np.abs(np.fft.rfft(dipole)) ** 2
+    autocorrelation_spectrum = np.abs(np.fft.fft(autocorrelation)[: frequency.size])
+
+    fig, axes = plt.subplots(3, 1, figsize=(6.5, 7.5), sharex=False)
+    axes[0].plot(time, energy[:, 1], label="kinetic")
+    axes[0].plot(time, energy[:, 2], label="potential")
+    axes[0].plot(time, energy[:, 3], label="interaction")
+    axes[0].plot(time, energy[:, 4], label="total", linewidth=2)
+    axes[0].set_ylabel("energy (a.u.)")
+    axes[0].set_title("Energy decomposition")
+    axes[0].grid(alpha=0.25)
+    axes[0].legend(ncol=4, fontsize=8)
+    axes[1].plot(time, current[:, 3], label="total current")
+    axes[1].plot(time, current[:, 6], label="intra-band")
+    axes[1].plot(time, current[:, 9], label="inter-band")
+    axes[1].set(xlabel="time (a.u.)", ylabel="current (a.u.)", title="Current decomposition")
+    axes[1].grid(alpha=0.25)
+    axes[1].legend(fontsize=8)
+    axes[2].plot(frequency, dipole_spectrum / max(dipole_spectrum.max(), 1e-30), label="dipole FFT")
+    axes[2].plot(
+        frequency,
+        autocorrelation_spectrum / max(autocorrelation_spectrum.max(), 1e-30),
+        label="autocorrelation spectrum",
+    )
+    axes[2].set(
+        xlabel="angular frequency (a.u.)", ylabel="normalized amplitude", title="Response spectra"
+    )
+    axes[2].set_xlim(0, 1.0)
+    axes[2].grid(alpha=0.25)
+    axes[2].legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(case_dir / "energy-current-spectra.png", dpi=150)
     plt.close(fig)
 
 

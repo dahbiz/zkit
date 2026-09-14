@@ -53,6 +53,16 @@ quantum-beating analysis.
    :alt: Rabi-style bound-state populations, laser field, and dipole response
    :width: 650px
 
+The runner also creates ``energy-current-spectra.png``.  It combines the
+kinetic, potential, interaction, and total energies; the intra-band,
+inter-band, and total currents; and normalized Fourier spectra of the dipole
+and autocorrelation.  These are useful diagnostics for energy exchange,
+selection rules, and quantum beating.
+
+.. image:: ../_static/examples/ho1d-energy-current-spectra.png
+   :alt: Energy decomposition, current decomposition, and response spectra
+   :width: 650px
+
 Reference spectra from this run:
 
 .. image:: ../_static/examples/quick-ho1d-spectrum.png
