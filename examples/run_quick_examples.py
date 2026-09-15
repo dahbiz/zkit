@@ -21,17 +21,29 @@ CASES = {
 }
 
 
-def plot_spectrum(values: np.ndarray, expected: np.ndarray, path: Path, title: str) -> None:
+def configure_matplotlib() -> None:
+    """Use a LaTeX-like serif style without requiring a TeX installation."""
     import matplotlib
 
     matplotlib.use("Agg")
+    matplotlib.rcParams.update(
+        {
+            "font.family": "serif",
+            "mathtext.fontset": "cm",
+            "axes.unicode_minus": False,
+        }
+    )
+
+
+def plot_spectrum(values: np.ndarray, expected: np.ndarray, path: Path, title: str) -> None:
+    configure_matplotlib()
     import matplotlib.pyplot as plt
 
     indices = np.arange(len(values))
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
     ax.scatter(indices, values, label="TDSEZ", zorder=3)
     ax.scatter(indices, expected, marker="x", label="analytic", zorder=3)
-    ax.set(xlabel="state index", ylabel="energy (a.u.)", title=title)
+    ax.set(xlabel=r"state index $n$", ylabel=r"energy $E_n$ (a.u.)", title=title)
     ax.grid(alpha=0.25)
     ax.legend()
     fig.tight_layout()
@@ -40,9 +52,7 @@ def plot_spectrum(values: np.ndarray, expected: np.ndarray, path: Path, title: s
 
 
 def plot_heterostructure(values: np.ndarray, path: Path, profile_path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
+    configure_matplotlib()
     import matplotlib.pyplot as plt
 
     x = np.linspace(-15.0, 15.0, 1200)
@@ -76,9 +86,7 @@ def plot_heterostructure(values: np.ndarray, path: Path, profile_path: Path) -> 
 
 
 def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
+    configure_matplotlib()
     import matplotlib.pyplot as plt
 
     evolution = read_evolution(evolution_path)
@@ -96,13 +104,25 @@ def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
     fig, (population_ax, response_ax) = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
     for state, values in enumerate(populations.T):
         population_ax.plot(evolution.time, values, label=f"P{state}")
+    # Two-level rotating-wave estimate for comparison with the full propagation.
+    omega = 0.2
+    field_amplitude = 0.05
+    dipole_01 = np.sqrt(1.0 / (2.0 * omega))
+    rabi_reference = np.sin(0.25 * field_amplitude * dipole_01 * evolution.time) ** 2
+    population_ax.plot(
+        evolution.time,
+        rabi_reference,
+        "k--",
+        linewidth=1.0,
+        label=r"two-level RWA $\sin^2(\Omega_R t/2)$",
+    )
     population_ax.set_ylabel("bound-state population")
     population_ax.set_ylim(-0.02, 1.05)
     population_ax.grid(alpha=0.25)
     population_ax.legend(ncol=3)
-    response_ax.plot(evolution.time, field, label="field E_x(t)", color="tab:orange")
-    response_ax.plot(evolution.time, dipole, label="dipole <x>", color="tab:blue")
-    response_ax.set(xlabel="time (a.u.)", ylabel="response (a.u.)")
+    response_ax.plot(evolution.time, field, label=r"field $E_x(t)$", color="tab:orange")
+    response_ax.plot(evolution.time, dipole, label=r"dipole $\langle x\rangle$", color="tab:blue")
+    response_ax.set(xlabel=r"time $t$ (a.u.)", ylabel="response (a.u.)")
     response_ax.grid(alpha=0.25)
     response_ax.legend()
     fig.suptitle("Driven 1D oscillator: Rabi-style population transfer")
@@ -113,9 +133,7 @@ def plot_rabi(evolution_path: Path, output_path: Path, csv_path: Path) -> None:
 
 def plot_observables(evolution, case_dir: Path) -> None:
     """Plot energy conservation, current decomposition, and spectra."""
-    import matplotlib
-
-    matplotlib.use("Agg")
+    configure_matplotlib()
     import matplotlib.pyplot as plt
 
     time = evolution.time
@@ -129,18 +147,20 @@ def plot_observables(evolution, case_dir: Path) -> None:
     autocorrelation_spectrum = np.abs(np.fft.fft(autocorrelation)[: frequency.size])
 
     fig, axes = plt.subplots(3, 1, figsize=(6.5, 7.5), sharex=False)
-    axes[0].plot(time, energy[:, 1], label="kinetic")
-    axes[0].plot(time, energy[:, 2], label="potential")
-    axes[0].plot(time, energy[:, 3], label="interaction")
-    axes[0].plot(time, energy[:, 4], label="total", linewidth=2)
-    axes[0].set_ylabel("energy (a.u.)")
+    axes[0].plot(time, energy[:, 1], label=r"kinetic $\langle K\rangle$")
+    axes[0].plot(time, energy[:, 2], label=r"potential $\langle V\rangle$")
+    axes[0].plot(time, energy[:, 3], label=r"interaction $\langle H_{int}\rangle$")
+    axes[0].plot(time, energy[:, 4], label=r"total $\langle H\rangle$", linewidth=2)
+    axes[0].set_ylabel(r"energy (a.u.)")
     axes[0].set_title("Energy decomposition")
     axes[0].grid(alpha=0.25)
     axes[0].legend(ncol=4, fontsize=8)
-    axes[1].plot(time, current[:, 3], label="total current")
-    axes[1].plot(time, current[:, 6], label="intra-band")
-    axes[1].plot(time, current[:, 9], label="inter-band")
-    axes[1].set(xlabel="time (a.u.)", ylabel="current (a.u.)", title="Current decomposition")
+    axes[1].plot(time, current[:, 3], label=r"total $J_x$")
+    axes[1].plot(time, current[:, 6], label=r"intra-band $J_x$")
+    axes[1].plot(time, current[:, 9], label=r"inter-band $J_x$")
+    axes[1].set(
+        xlabel=r"time $t$ (a.u.)", ylabel=r"current $J_x$ (a.u.)", title="Current decomposition"
+    )
     axes[1].grid(alpha=0.25)
     axes[1].legend(fontsize=8)
     axes[2].plot(frequency, dipole_spectrum / max(dipole_spectrum.max(), 1e-30), label="dipole FFT")
@@ -150,7 +170,9 @@ def plot_observables(evolution, case_dir: Path) -> None:
         label="autocorrelation spectrum",
     )
     axes[2].set(
-        xlabel="angular frequency (a.u.)", ylabel="normalized amplitude", title="Response spectra"
+        xlabel=r"angular frequency $\omega$ (a.u.)",
+        ylabel="normalized amplitude",
+        title="Response spectra",
     )
     axes[2].set_xlim(0, 1.0)
     axes[2].grid(alpha=0.25)

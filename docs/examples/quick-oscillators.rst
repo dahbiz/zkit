@@ -20,6 +20,14 @@ PNG plots below ``examples/output``.  Use ``--case 1d`` or ``--case 2d`` to
 run only one dimension.  The expected energies are ``[0.1, 0.3, 0.5]`` in 1D
 and ``[0.2, 0.4, 0.4, 0.6, 0.6, 0.6]`` in 2D (atomic units).
 
+For the oscillator checks, the analytic references are
+
+.. math::
+
+   E_n^{(1D)} = \hbar\omega\left(n+\tfrac12\right),
+   \qquad
+   E_{n_x,n_y}^{(2D)} = \hbar\omega\left(n_x+n_y+1\right).
+
 The runner also includes a finite quantum-well heterostructure:
 
 .. code-block:: bash
@@ -48,6 +56,17 @@ The resulting ``rabi-populations-response.png`` contains bound-state
 populations, the applied electric field, and the dipole response.  The CSV
 file contains those observables for further Fourier, susceptibility, or
 quantum-beating analysis.
+
+The dashed curve is the analytic two-level rotating-wave estimate
+
+.. math::
+
+   P_1(t) \simeq \sin^2\!\left(\frac{E_0 |x_{01}| t}{4}\right),
+   \qquad |x_{01}|=\sqrt{\frac{\hbar}{2m\omega}},
+
+with ``E0 = 0.05`` and ``omega = 0.2`` in atomic units.  The TDSEZ curves
+retain the full three-state dynamics, so their difference from this dashed
+reference shows where the two-level approximation breaks down.
 
 .. image:: ../_static/examples/ho1d-rabi-populations-response.png
    :alt: Rabi-style bound-state populations, laser field, and dipole response
