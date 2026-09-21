@@ -266,6 +266,7 @@ def compute_wfs_norm(path, step=0, nq=5):
     float : the squared norm integral of |psi|^2 over the whole domain.
     """
     import h5py
+
     from igakit.igalib import bsp
 
     with h5py.File(path, "r") as f:
