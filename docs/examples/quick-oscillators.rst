@@ -16,8 +16,8 @@ checkout::
 
 The runner writes the copied decks, HDF5 outputs, CSV data, and PNG plots below
 ``examples/output``.  Select a case with ``--case 1d``, ``2d``, ``3d``,
-``heterostructure``, or ``rabi``.  Use ``--case all`` to run the complete
-smoke-test set.
+``heterostructure``, ``rabi``, ``rabi-weak``, ``rabi-detuned``, or
+``rabi-suite``.  Use ``--case all`` to run the complete smoke-test set.
 
 For the oscillator checks, the analytic references are
 
@@ -94,6 +94,29 @@ selection rules, and quantum beating.
 .. image:: ../_static/examples/ho1d-energy-current-spectra.png
    :alt: Energy decomposition, current decomposition, and response spectra
    :width: 650px
+
+Rabi-flopping suite
+-------------------
+
+Use ``--case rabi-suite`` to compare three short 1D propagations:
+
+* a resonant drive with ``E_0=0.05`` and ``\omega_d=0.20``;
+* a weaker resonant drive with ``E_0=0.02``;
+* a detuned drive with ``E_0=0.05`` and ``\omega_d=0.16``.
+
+Each run writes its own HDF5 observables and population plot.  The suite also
+creates ``rabi-comparison.png``, which overlays the first-excited-state
+population and the resonant two-level analytical reference.  The detuned case
+shows the reduced transfer expected when the drive frequency is displaced from
+the transition energy.
+
+.. code-block:: bash
+
+   python examples/run_quick_examples.py --tdsez /tmp/tdsez-build/tdsez --case rabi-suite
+
+.. image:: ../_static/examples/ho1d-rabi-suite-comparison.png
+   :alt: Comparison of resonant, weak-drive, and detuned Rabi flopping
+   :width: 700px
 
 Reference spectra from this run:
 

@@ -18,6 +18,8 @@ CASES = {
     "2d": ("harmonic_oscillator_2d.inp", np.array([0.2, 0.4, 0.4, 0.6, 0.6, 0.6]), 2),
     "heterostructure": ("finite_quantum_well_heterostructure_1d.inp", None, 1),
     "rabi": ("ho1d_rabi.inp", None, 1),
+    "rabi-weak": ("ho1d_rabi_weak.inp", None, 1),
+    "rabi-detuned": ("ho1d_rabi_detuned.inp", None, 1),
     "3d": ("harmonic_oscillator_3d_small.inp", np.array([0.3006]), 3),
 }
 
@@ -183,6 +185,38 @@ def plot_observables(evolution, case_dir: Path) -> None:
     plt.close(fig)
 
 
+def plot_rabi_comparison(output_dir: Path, output_path: Path) -> None:
+    configure_matplotlib()
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for case, label, color in (
+        ("rabi", r"resonant: $E_0=0.05$, $\omega_d=0.20$", "tab:blue"),
+        ("rabi-weak", r"weak: $E_0=0.02$, $\omega_d=0.20$", "tab:green"),
+        ("rabi-detuned", r"detuned: $E_0=0.05$, $\omega_d=0.16$", "tab:orange"),
+    ):
+        deck_name = CASES[case][0]
+        path = output_dir / case / "td" / f"TimeEvolutionData_{deck_name}.h5"
+        evolution = read_evolution(path)
+        ax.plot(evolution.time, evolution.populations[:, 2], label=label, color=color)
+    time = np.linspace(0.0, 100.0, 600)
+    omega = 0.2
+    dipole_01 = np.sqrt(1.0 / (2.0 * omega))
+    reference = np.sin(0.25 * 0.05 * dipole_01 * time) ** 2
+    ax.plot(time, reference, "k--", linewidth=1.0, label=r"resonant two-level RWA")
+    ax.set(
+        xlabel=r"time $t$ (a.u.)",
+        ylabel=r"first-excited population $P_1(t)$",
+        title="Rabi oscillations and detuning",
+    )
+    ax.set_ylim(-0.02, 1.0)
+    ax.grid(alpha=0.25)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
 def plot_3d_eigenstate(eigen, output_path: Path) -> None:
     configure_matplotlib()
     import matplotlib.pyplot as plt
@@ -299,7 +333,7 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
             case_dir / "potential_and_levels.png",
             case_dir / "profile.csv",
         )
-    elif case == "rabi":
+    elif case in {"rabi", "rabi-weak", "rabi-detuned"}:
         plot_rabi(
             case_dir / "td" / f"TimeEvolutionData_{deck.name}.h5",
             case_dir / "rabi-populations-response.png",
@@ -323,14 +357,33 @@ def main() -> int:
     parser.add_argument("--tdsez", type=Path, required=True, help="path to the TDSEZ executable")
     parser.add_argument("--output-dir", type=Path, default=Path("examples/output"))
     parser.add_argument(
-        "--case", choices=["1d", "2d", "3d", "heterostructure", "rabi", "all"], default="all"
+        "--case",
+        choices=[
+            "1d",
+            "2d",
+            "3d",
+            "heterostructure",
+            "rabi",
+            "rabi-weak",
+            "rabi-detuned",
+            "rabi-suite",
+            "all",
+        ],
+        default="all",
     )
     args = parser.parse_args()
     if not args.tdsez.is_file():
         parser.error(f"TDSEZ executable not found: {args.tdsez}")
-    cases = CASES if args.case == "all" else {args.case: CASES[args.case]}
+    if args.case == "rabi-suite":
+        cases = {name: CASES[name] for name in ("rabi", "rabi-weak", "rabi-detuned")}
+    else:
+        cases = CASES if args.case == "all" else {args.case: CASES[args.case]}
     for case in cases:
         run_case(args.tdsez.resolve(), case, args.output_dir.resolve())
+    if args.case in {"rabi-suite", "all"}:
+        plot_rabi_comparison(
+            args.output_dir.resolve(), args.output_dir.resolve() / "rabi-comparison.png"
+        )
     return 0
 
 
