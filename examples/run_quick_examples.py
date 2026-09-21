@@ -199,6 +199,55 @@ def plot_3d_eigenstate(eigen, output_path: Path) -> None:
     plt.close(fig)
 
 
+def plot_1d_eigenstate(eigen, output_path: Path) -> None:
+    configure_matplotlib()
+    import matplotlib.pyplot as plt
+
+    field = eigen.reconstruct(istate=0, npoints=500)
+    x = field["axes"][0]
+    fig, axes = plt.subplots(2, 1, figsize=(6.5, 5.5), sharex=True)
+    axes[0].plot(x, field["Re"], label=r"$\operatorname{Re}\psi_0$")
+    axes[0].plot(x, field["Im"], label=r"$\operatorname{Im}\psi_0$")
+    axes[0].plot(x, field["abs2"], label=r"$|\psi_0|^2$", linewidth=2)
+    axes[0].set_ylabel("amplitude / density")
+    axes[0].set_title(r"1D ground state: $\psi_0(x)$")
+    axes[0].grid(alpha=0.25)
+    axes[0].legend()
+    phase = np.unwrap(np.angle(field["psi"]))
+    axes[1].plot(x, phase, color="tab:purple")
+    axes[1].set(xlabel=r"position $x$ (a.u.)", ylabel=r"phase $\arg\psi_0$")
+    axes[1].grid(alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_2d_eigenstate(eigen, output_path: Path) -> None:
+    configure_matplotlib()
+    import matplotlib.pyplot as plt
+
+    field = eigen.reconstruct(istate=0, npoints=100)
+    x, y = field["axes"]
+    extent = [x[0], x[-1], y[0], y[-1]]
+    density = field["abs2"].T
+    phase = np.angle(field["psi"]).T
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4), constrained_layout=True)
+    image = axes[0].imshow(density, origin="lower", extent=extent, cmap="magma")
+    axes[0].set_title(r"density $|\psi_0(x,y)|^2$")
+    fig.colorbar(image, ax=axes[0], shrink=0.85)
+    image = axes[1].imshow(phase, origin="lower", extent=extent, cmap="twilight")
+    axes[1].set_title(r"phase $\arg\psi_0(x,y)$")
+    fig.colorbar(image, ax=axes[1], shrink=0.85)
+    levels = np.linspace(float(density.min()), float(density.max()), 12)
+    axes[2].contourf(density, levels=levels, extent=extent, cmap="viridis")
+    axes[2].contour(density, levels=levels, extent=extent, colors="white", linewidths=0.35)
+    axes[2].set_title(r"density contours")
+    for axis in axes:
+        axis.set(xlabel=r"$x$ (a.u.)", ylabel=r"$y$ (a.u.)")
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
 def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
     deck_name, expected, dimension = CASES[case]
     source = Path(__file__).parent / "inputs" / deck_name
@@ -238,7 +287,11 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
         header="state,energy",
         comments="",
     )
-    if case == "3d":
+    if case == "1d":
+        plot_1d_eigenstate(eigen, case_dir / "ground-state-components.png")
+    elif case == "2d":
+        plot_2d_eigenstate(eigen, case_dir / "ground-state-density-phase-contours.png")
+    elif case == "3d":
         plot_3d_eigenstate(eigen, case_dir / "ground-state-central-slice.png")
     elif case == "heterostructure":
         plot_heterostructure(

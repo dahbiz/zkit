@@ -27,6 +27,20 @@ For the oscillator checks, the analytic references are
    \qquad
    E_{n_x,n_y}^{(2D)} = \hbar\omega\left(n_x+n_y+1\right).
 
+The 1D case also writes a ground-state diagnostic containing the real and
+imaginary components, probability density, and unwrapped phase.  The 2D case
+writes density, phase, and filled contour views of the ground state.  These
+plots are useful for checking parity, localization, nodal structure, and
+phase conventions before analyzing larger calculations.
+
+.. image:: ../_static/examples/ho1d-ground-state-components.png
+   :alt: One-dimensional ground-state components, density, and phase
+   :width: 650px
+
+.. image:: ../_static/examples/ho2d-ground-state-density-phase-contours.png
+   :alt: Two-dimensional ground-state density, phase, and contours
+   :width: 900px
+
 The runner also includes a finite quantum-well heterostructure:
 
 .. code-block:: bash
