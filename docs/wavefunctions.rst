@@ -7,7 +7,9 @@ zkit reads two kinds of wavefunction outputs:
 2. Static eigenstates from ``static/EigenData_<input>.h5``
 
 Both contain IGA B-spline coefficients, not real-space arrays. zkit evaluates
-the basis with igakit so you can plot or export on a regular grid.
+the basis with its bundled ``igakit.igalib.bsp`` compatibility layer so you
+can plot or export on a regular grid without installing a separate igakit
+package.
 
 Read snapshots
 --------------
@@ -93,3 +95,7 @@ Supported extensions:
 - ``.vts`` StructuredGrid
 - ``.vtu`` UnstructuredGrid
 - ``.vtk`` legacy StructuredGrid
+
+Three-dimensional reconstruction returns a tensor with shape
+``(nx, ny, nz)``.  For a quick visual check, the repository's small 3D example
+plots the central ``z=0`` slice of ``|psi|^2``.

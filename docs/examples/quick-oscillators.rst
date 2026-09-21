@@ -1,11 +1,10 @@
-Quick 1D and 2D oscillator runs
-================================
+Quick oscillator, heterostructure, and dynamics examples
+=========================================================
 
-The repository includes two small TDSEZ input decks.  They solve three states
-of a one-dimensional harmonic oscillator and six states of an isotropic
-two-dimensional oscillator.  Propagation is disabled, so each run only does a
-static eigenvalue solve and normally completes in a few seconds including
-MPI/PETSc startup.
+The repository includes small, deterministic TDSEZ examples for static
+oscillators, a three-dimensional reconstruction smoke test, a finite quantum
+well, and driven dynamics.  Static cases disable propagation and complete in a
+few seconds, including MPI/PETSc startup.
 
 Build TDSEZ in a separate directory, then run the examples from the zkit
 checkout::
@@ -15,10 +14,10 @@ checkout::
    cmake --build /tmp/tdsez-build --target tdsez --parallel 4
    python examples/run_quick_examples.py --tdsez /tmp/tdsez-build/tdsez
 
-The runner writes the copied decks, HDF5 eigenvalue files, CSV spectra, and
-PNG plots below ``examples/output``.  Use ``--case 1d`` or ``--case 2d`` to
-run only one dimension.  The expected energies are ``[0.1, 0.3, 0.5]`` in 1D
-and ``[0.2, 0.4, 0.4, 0.6, 0.6, 0.6]`` in 2D (atomic units).
+The runner writes the copied decks, HDF5 outputs, CSV data, and PNG plots below
+``examples/output``.  Select a case with ``--case 1d``, ``2d``, ``3d``,
+``heterostructure``, or ``rabi``.  Use ``--case all`` to run the complete
+smoke-test set.
 
 For the oscillator checks, the analytic references are
 
@@ -90,4 +89,21 @@ Reference spectra from this run:
 
 .. image:: ../_static/examples/quick-ho2d-spectrum.png
    :alt: 2D harmonic oscillator spectrum
+   :width: 600px
+
+Three-dimensional reconstruction
+--------------------------------
+
+The ``3d`` case uses eight cubic B-spline functions per axis and computes the
+ground state of an isotropic oscillator.  Its analytical ground-state energy
+is ``E_000 = 3 hbar omega / 2 = 0.3`` a.u.; the coarse smoke test returns
+approximately ``0.3006`` a.u.  Run it with::
+
+   python examples/run_quick_examples.py --tdsez /tmp/tdsez-build/tdsez --case 3d
+
+The runner reconstructs the three-dimensional field with the bundled evaluator
+and saves a central ``z=0`` slice of ``|psi_0|^2``.
+
+.. image:: ../_static/examples/ho3d-ground-state-slice.png
+   :alt: Central slice of the three-dimensional oscillator ground-state density
    :width: 600px

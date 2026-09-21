@@ -39,12 +39,9 @@ dependencies = [
 
 [project.optional-dependencies]
 physics = ["sympy>=1.11"]
-reconstruction = ["igakit>=0.1"]
+reconstruction = []
 viz = ["matplotlib>=3.7"]
-vtk = [
-    "igakit>=0.1",
-    "pyvista>=0.43",
-]
+vtk = ["pyvista>=0.43"]
 mwigner = [
     "matplotlib>=3.7",
     "torch>=2.0",
@@ -73,7 +70,10 @@ version = { attr = "zkit._version.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["zkit*"]
+include = ["zkit*", "igakit*"]
+
+[tool.setuptools.package-data]
+igakit = ["LICENSE.rst"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --strict-markers"
@@ -88,4 +88,3 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.ruff.format]
 docstring-code-format = true
-

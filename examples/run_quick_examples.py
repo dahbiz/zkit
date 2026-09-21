@@ -18,6 +18,7 @@ CASES = {
     "2d": ("harmonic_oscillator_2d.inp", np.array([0.2, 0.4, 0.4, 0.6, 0.6, 0.6]), 2),
     "heterostructure": ("finite_quantum_well_heterostructure_1d.inp", None, 1),
     "rabi": ("ho1d_rabi.inp", None, 1),
+    "3d": ("harmonic_oscillator_3d_small.inp", np.array([0.3006]), 3),
 }
 
 
@@ -182,6 +183,22 @@ def plot_observables(evolution, case_dir: Path) -> None:
     plt.close(fig)
 
 
+def plot_3d_eigenstate(eigen, output_path: Path) -> None:
+    configure_matplotlib()
+    import matplotlib.pyplot as plt
+
+    field = eigen.reconstruct(istate=0, npoints=32)
+    middle = field["abs2"].shape[2] // 2
+    extent = [field["axes"][0][0], field["axes"][0][-1], field["axes"][1][0], field["axes"][1][-1]]
+    fig, ax = plt.subplots(figsize=(5.5, 4.5))
+    image = ax.imshow(field["abs2"][:, :, middle].T, origin="lower", extent=extent, cmap="magma")
+    ax.set(xlabel=r"$x$ (a.u.)", ylabel=r"$y$ (a.u.)", title=r"$|\psi_0(x,y,z=0)|^2$")
+    fig.colorbar(image, ax=ax, label=r"$|\psi_0|^2$")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
 def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
     deck_name, expected, dimension = CASES[case]
     source = Path(__file__).parent / "inputs" / deck_name
@@ -221,7 +238,9 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
         header="state,energy",
         comments="",
     )
-    if case == "heterostructure":
+    if case == "3d":
+        plot_3d_eigenstate(eigen, case_dir / "ground-state-central-slice.png")
+    elif case == "heterostructure":
         plot_heterostructure(
             eigen.values,
             case_dir / "potential_and_levels.png",
@@ -251,7 +270,7 @@ def main() -> int:
     parser.add_argument("--tdsez", type=Path, required=True, help="path to the TDSEZ executable")
     parser.add_argument("--output-dir", type=Path, default=Path("examples/output"))
     parser.add_argument(
-        "--case", choices=["1d", "2d", "heterostructure", "rabi", "all"], default="all"
+        "--case", choices=["1d", "2d", "3d", "heterostructure", "rabi", "all"], default="all"
     )
     args = parser.parse_args()
     if not args.tdsez.is_file():

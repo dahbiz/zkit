@@ -88,3 +88,13 @@ def test_static_coefficients_accept_tdsez_tensor_and_flat_layouts() -> None:
 
     with pytest.raises(ValueError, match="incompatible"):
         _reshape_static_coefficients(np.zeros((3, 2)), [3, 4], "psi_0")
+
+
+def test_bundled_igakit_evaluator_preserves_partition_of_unity() -> None:
+    from igakit.igalib import bsp
+
+    knots = np.array([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
+    control_points = np.ones((3, 1))
+    values = bsp.Evaluate1(2, knots, control_points, np.linspace(0.0, 1.0, 9))[:, 0]
+
+    assert values == pytest.approx(np.ones(9))

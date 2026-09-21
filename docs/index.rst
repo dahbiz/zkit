@@ -1,5 +1,5 @@
-zkit documentation
-==================
+zkit: analysis tools for TDSEZ
+==============================
 
 .. image:: _static/logo.png
    :align: center
@@ -8,8 +8,8 @@ zkit documentation
 .. raw:: html
 
    <div style="text-align: center; margin-top: 0.5em;">
-     <p><strong>IGA and TDSE-Z Toolkit</strong></p>
-     <p><em>Developed by Dr. Zakaria Dahbi</em></p>
+   <p><strong>Isogeometric analysis and time-dependent Schrödinger workflows</strong></p>
+   <p><em>Read, reconstruct, analyze, and visualize TDSEZ simulations</em></p>
    </div>
 
 .. toctree::

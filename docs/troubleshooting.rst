@@ -16,13 +16,12 @@ differentiation of ``Potential``, ``Mass``, and laser expressions.
 ``import zkit.io.wfs_field`` or ``eigen.reconstruct()`` fails
 --------------------------------------------------------------
 
-Install igakit:
+The evaluator is bundled with zkit as ``igakit.igalib.bsp``.  Reinstall zkit
+if the module is missing:
 
 .. code-block:: bash
 
-   pip install igakit
-
-Reconstruction needs ``igakit.igalib.bsp.Evaluate{1,2,3}``.
+   pip install -e .
 
 ``plot_wavefunction(..., vtk=...)`` fails
 -----------------------------------------

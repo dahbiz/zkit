@@ -26,7 +26,7 @@ extensions = [
 
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
-autodoc_mock_imports = ["igakit", "matplotlib", "pyvista", "sympy", "torch"]
+autodoc_mock_imports = ["matplotlib", "pyvista", "sympy", "torch"]
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_use_param = True

@@ -119,6 +119,7 @@ Author: Zakaria Dahbi (King's College London, Attosecond Quantum Physics Lab)
 
 ## Acknowledgement
 
-`zkit` relies on `igakit` for IGA B-spline evaluation in wavefunction reconstruction.
-`igakit` is developed by Lisandro Dalcin and Nathaniel Collier.
-See https://github.com/girving/igakit .
+`zkit` ships a lightweight, pure-Python `igakit.igalib.bsp` compatibility
+evaluator for IGA B-spline wavefunction reconstruction. It preserves the
+upstream evaluator interface while avoiding a separate compiled dependency.
+The bundled upstream BSD license is in `src/igakit/LICENSE.rst`.
