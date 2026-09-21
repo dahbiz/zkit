@@ -15,9 +15,19 @@ checkout::
    python examples/run_quick_examples.py --tdsez /tmp/tdsez-build/tdsez
 
 The runner writes the copied decks, HDF5 outputs, CSV data, and PNG plots below
-``examples/output``.  Select a case with ``--case 1d``, ``2d``, ``3d``,
-``heterostructure``, ``rabi``, ``rabi-weak``, ``rabi-detuned``, or
-``rabi-suite``.  Use ``--case all`` to run the complete smoke-test set.
+``examples/output``.  Select one of the focused cases below, or use
+``--case all`` for the complete smoke-test set:
+
+.. code-block:: text
+
+   1d              static 1D spectrum and ground-state diagnostics
+   2d              static 2D spectrum, density, phase, and contours
+   3d              static 3D reconstruction and central density slice
+   heterostructure finite quantum well with an effective-mass barrier
+   rabi            resonant driven dynamics
+   rabi-weak       weak resonant drive
+   rabi-detuned    off-resonant drive
+   rabi-suite      resonant, weak, and detuned comparison
 
 For the oscillator checks, the analytic references are
 
