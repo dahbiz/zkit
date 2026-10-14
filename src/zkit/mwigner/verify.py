@@ -181,7 +181,7 @@ def run_all(
         dp = p_v[1] - p_v[0]
         Ex_t = float(phys.Ex(t_i))
         Jx = wc.current_x(W, p_v)
-        Jp = wc.current_p_classical(W, x, Vp_x) - Ex_t * W
+        Jp = wc.current_p_classical(W, x, Vp_x) - phys.carrier_sign * Ex_t * W
         Q = wc.moyal_quantum_force(W, x, p_v, V_derivs)
         Jp_q = Jp + Q
         div_diff = wc.deriv_p(Jp - Jp_q, dp)

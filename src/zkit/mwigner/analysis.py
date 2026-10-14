@@ -67,7 +67,7 @@ def _snapshot_currents(psi, x, dx, phys, t_i, device, M_max):
     dp = p_v[1] - p_v[0]
     Ex_t = float(phys.Ex(t_i))
     Jx = wc.current_x(W, p_v)
-    Jp = wc.current_p_classical(W, x, phys.Vpx(x, np.zeros_like(x))) - Ex_t * W
+    Jp = wc.current_p_classical(W, x, phys.Vpx(x, np.zeros_like(x))) - phys.carrier_sign * Ex_t * W
     # Moyal quantum force from the deck-derived odd derivatives
     V_derivs = {
         "Vp": phys.Vpx(x, np.zeros_like(x)),

@@ -76,7 +76,7 @@ DriverX = Ampx*sin(t)
     assert params["laserx"] == "Ampx*sin(t)"
     assert variables == {"A0": 1.5, "B0": 2.0, "C0": 3.0}
     c = expression_constants(params, variables)
-    assert c["Ampy"] == 0.02 and c["NSplines"] == 40 and c["Charge"] == 1.0 and c["C0"] == 3.0
+    assert c["Ampy"] == 0.02 and c["NSplines"] == 40 and c["Charge"] == -1.0 and c["C0"] == 3.0
 
 
 def test_physics_field_follows_tdsez(tmp_path):
@@ -146,3 +146,17 @@ def test_time_axis_when_dipoles_disabled(tmp_path):
         f["autocorrelation"] = np.zeros((n, 3))
     ev = read_evolution(tmp_path / "TimeEvolutionData_x.inp.h5")
     assert np.allclose(ev.time, t)
+
+
+def test_carrier_sign_follows_charge(tmp_path):
+    """Charge = -1 (default, electron): V as written; Charge = +1 (hole): -V."""
+    deck = "Dimension = 1\nPotential = 0.5*x*x\nPolarization = x\nLaserX = 0.1\nFinalTime = 1\n"
+    _write(tmp_path, deck, "e.inp")
+    _write(tmp_path, deck + "Charge = 1\n", "h.inp")
+    pe = Run(tmp_path, "e.inp").physics
+    ph = Run(tmp_path, "h.inp").physics
+    assert pe.carrier_sign == 1.0 and ph.carrier_sign == -1.0
+    assert float(pe.V(2.0, 0.0)) == pytest.approx(2.0)
+    assert float(ph.V(2.0, 0.0)) == pytest.approx(-2.0)
+    assert float(ph.Vpx(2.0, 0.0)) == pytest.approx(-2.0)
+    assert float(ph.Ex(0.3)) == pytest.approx(0.1)  # the field itself is not signed

@@ -67,8 +67,8 @@ _LIST_KEYS: Dict[str, Tuple[str, str, str]] = {
 # Scalars TDSE-Z binds as constants in every expression: name -> (canonical
 # key, TDSE-Z default). Names are case-sensitive, as in muParser.
 _CONSTANTS: Dict[str, Tuple[str, float]] = {
-    "Q": ("charge", 1.0),
-    "Charge": ("charge", 1.0),
+    "Q": ("charge", -1.0),
+    "Charge": ("charge", -1.0),
     "Dimension": ("dimension", 1.0),
     "SplineDegree": ("splinedegree", 3.0),
     "Nelements": ("nelements", 100.0),

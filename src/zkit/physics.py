@@ -164,8 +164,12 @@ class Physics:
             src = self.extra.get(key)
             return parse_expression(src, variables, self.constants) if src else default
 
-        # ---- potential V(x,y) and mass m(x,y) ----
-        self._V_expr = _expr("potential", ("x", "y"), sp.Integer(0))
+        # ---- carrier: H = K + s (V + r.E), s = -Charge (electron s = +1) ----
+        self.charge = self.constants["Charge"]
+        self.carrier_sign = -self.charge
+
+        # ---- potential energy of the carrier s V(x,y), and mass m(x,y) ----
+        self._V_expr = self.carrier_sign * _expr("potential", ("x", "y"), sp.Integer(0))
         self._M_expr = _expr("mass", ("x", "y"), sp.Integer(1))
 
         # ---- laser field E(t) per axis, exactly as TDSE-Z applies it ----
@@ -245,7 +249,7 @@ class Physics:
         return self._V5x(x)
 
     def Ex(self, t):
-        """Laser field E_x(t) as applied by TDSE-Z (coupling +E.r)."""
+        """Laser field E_x(t) (LaserX); it enters H as s E_x x, s = carrier_sign."""
         return self._E["x"](t)
 
     def Ey(self, t):
