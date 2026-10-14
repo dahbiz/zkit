@@ -89,7 +89,7 @@ Physics from input deck
    print(phys.snapshot_time(10))
 
    V = phys.V(0.0, 0.0)
-   Ax = phys.Ax(1000.0)
+   Ex = phys.Ex(1000.0)   # laser field E_x(t) (LaserX)
    Vpx = phys.Vpx(0.1, 0.0)
 
 Deck-derived physics requires ``sympy``:

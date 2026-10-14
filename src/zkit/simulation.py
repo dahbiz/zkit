@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     import numpy as np
@@ -148,61 +148,31 @@ class Run:
         return self.evolution.autocorrelation
 
     def _parse_meta(self) -> SimulationMeta:
+        """Parse the input deck with the TDSE-Z rules (aliases, inline
+        comments, Domain, per-axis lists, Variables; see zkit.deck)."""
+        from zkit.deck import read_deck
+
         path = self.run_dir / self.base
-        extra: Dict[str, object] = {}
-
-        def _read(path: Path) -> Dict[str, str]:
-            text = path.read_text(errors="ignore").splitlines()
-            out: Dict[str, str] = {}
-            for line in text:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" not in line:
-                    continue
-                key, _, value = line.partition("=")
-                out[key.strip().lower()] = value.strip()
-            return out
-
         if not path.exists():
             return SimulationMeta(input_file=str(self.input_file))
 
-        params = _read(path)
-        dimension = _to_int(params.get("dimension"), default=1)
-        n_splines = _to_int(
-            params.get("nsplines") or params.get("nspline") or params.get("nsplines"), default=0
-        )
-        time_step = _to_float(params.get("timestep"), default=0.0)
-        final_time = _to_float(params.get("finaltime") or params.get("final_time"), default=0.0)
-        ns_energy = _to_int(params.get("nboundstates") or params.get("nboundstatessave"), default=0)
-        ns_population = _to_int(params.get("nboundstates") or params.get("npops"), default=0)
-        output_stride_wfs = _to_int(params.get("outputstridewfs"), default=0)
-        output_stride_ts = _to_int(params.get("outputstridets"), default=0)
-
-        for key in (
-            "dimension",
-            "nsplines",
-            "timestep",
-            "finaltime",
-            "nboundstates",
-            "outputstridewfs",
-            "outputstridets",
-        ):
-            params.pop(key, None)
-        extra = params
-
-        return SimulationMeta(
+        params, variables = read_deck(path)
+        meta = SimulationMeta(
             input_file=str(self.input_file),
-            dimension=dimension,
-            n_splines=n_splines,
-            time_step=time_step,
-            final_time=final_time,
-            ns_energy=ns_energy,
-            ns_population=ns_population,
-            output_stride_wfs=output_stride_wfs,
-            output_stride_ts=output_stride_ts,
-            extra=extra,
+            dimension=_to_int(params.get("dimension"), default=1),
+            n_splines=_to_int(params.get("nelements"), default=0),
+            time_step=_to_float(params.get("timestep"), default=0.0),
+            final_time=_to_float(params.get("finaltime"), default=0.0),
+            ns_energy=_to_int(
+                params.get("nboundstates") or params.get("nboundstatessave"), default=0
+            ),
+            ns_population=_to_int(params.get("nboundstates") or params.get("npops"), default=0),
+            output_stride_wfs=_to_int(params.get("outputstridewfs"), default=0),
+            output_stride_ts=_to_int(params.get("outputstridets"), default=0),
+            extra=dict(params),
+            variables=dict(variables),
         )
+        return meta
 
     def __repr__(self) -> str:
         return (

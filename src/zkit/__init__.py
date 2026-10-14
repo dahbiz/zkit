@@ -14,13 +14,15 @@ HDF5 layout (as written by src/core.cpp :: TDSEZCore::Output):
       SplineDegree         (attr int)
       Nelements            (attr int)
       LMinX..LMaxZ         (attr float)
-      Hbar, Charge         (attr float)
+      Charge               (attr float)
       TargetEigenvalue     (attr float)
       NBoundStates*        (attr int)
       eig_residual         (dataset 1-D float)  SLEPc relative error per state
   /knots_x, /knots_y, /knots_z   (1-D float)  PetIGA compact knot vector
                                     len = nfuncs + p ; last knot = Lmax
-  /psi_0 .. /psi_{N-1}     (1-D complex)  eigenvector coefficients in IGA dof order
+  /psi_0 .. /psi_{N-1}     (complex)      eigenvectors, PetIGA structured view
+  /coeff_0 .. /coeff_{N-1} (1-D complex)  eigenvector coefficients, natural ordering
+                                    (the ordering of the saved operator matrices)
 """
 
 import h5py

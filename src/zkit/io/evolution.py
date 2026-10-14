@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import h5py
+import numpy as np
 
 from zkit.io.base import read_dataset
 from zkit.models import TimeEvolution
@@ -57,8 +58,17 @@ def read_evolution(path: Union[str, Path], *, dimension: Optional[int] = None) -
     if autocorrelation.shape[1] != 3:
         raise ValueError(f"autocorrelation must have 3 columns, got {autocorrelation.shape[1]}")
 
+    # Column 0 of every table is t, but a table disabled in PhysicsOutput is
+    # written as zeros: take t from the first table that holds it.
+    time = dipoles[:, 0].astype(float)
+    for table in (dipoles, energies, populations, currents, autocorrelation):
+        col = table[:, 0].astype(float) if table.ndim == 2 and table.shape[0] else None
+        if col is not None and col.shape[0] > 1 and np.any(col[1:] != 0.0):
+            time = col
+            break
+
     return TimeEvolution(
-        time=dipoles[:, 0].astype(float),
+        time=time,
         dipoles=dipoles.astype(float),
         populations=populations.astype(float),
         energies=energies.astype(float),

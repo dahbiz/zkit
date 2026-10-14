@@ -179,9 +179,9 @@ def run_all(
         psi = raw[i, :, :, 0] + 1j * raw[i, :, :, 1]
         W, p_v = wq.get_wigner_research(psi, dx, dx, device=device, M_max=M_max)
         dp = p_v[1] - p_v[0]
-        Ax_t = float(phys.Ax(t_i))
+        Ex_t = float(phys.Ex(t_i))
         Jx = wc.current_x(W, p_v)
-        Jp = wc.current_p_classical(W, x, Vp_x) - Ax_t * W
+        Jp = wc.current_p_classical(W, x, Vp_x) - Ex_t * W
         Q = wc.moyal_quantum_force(W, x, p_v, V_derivs)
         Jp_q = Jp + Q
         div_diff = wc.deriv_p(Jp - Jp_q, dp)

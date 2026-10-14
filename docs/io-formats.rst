@@ -27,7 +27,7 @@ Top-level group:
   - ``SplineDegree``
   - ``Nelements``
   - ``LMinX``, ``LMaxX``, ``LMinY``, ``LMaxY``, ``LMinZ``, ``LMaxZ``
-  - ``Hbar``, ``Charge``
+  - ``Charge``
   - ``TargetEigenvalue``
   - ``NBoundStatesSave``
   - ``NBoundStates``

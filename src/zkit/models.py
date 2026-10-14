@@ -20,7 +20,8 @@ class SimulationMeta:
     ns_population: int = 0
     output_stride_wfs: int = 0
     output_stride_ts: int = 0
-    extra: dict = field(default_factory=dict)
+    extra: dict = field(default_factory=dict)  # canonical lower-case key -> raw value
+    variables: dict = field(default_factory=dict)  # user constants (Variables lines)
 
     @property
     def n_steps(self) -> int:
