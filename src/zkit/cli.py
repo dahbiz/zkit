@@ -129,6 +129,18 @@ def cmd_tdm_plot(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_validate(args: argparse.Namespace) -> int:
+    from zkit.validation import default_binary, validate
+
+    binary = args.binary or default_binary()
+    if not binary:
+        print("no TDSE-Z binary: pass --binary or set TDSEZ_BINARY")
+        return 2
+    report = validate(binary, args.reference, args.np, args.workdir, quick=args.quick)
+    print(report.text())
+    return 0 if report.ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read TDSEZ simulation outputs.")
     parser.add_argument("--run-dir", default=".", help="Run directory containing td/ and static/")
@@ -185,6 +197,15 @@ def main(argv: list[str] | None = None) -> int:
     p_tdm.add_argument("--prefix", default="tdm", help="Output filename prefix")
     p_tdm.add_argument("--dpi", type=int, default=150, help="Figure DPI")
 
+    p_val = subparsers.add_parser(
+        "validate", help="Run TDSE-Z on analytic cases and check every output column"
+    )
+    p_val.add_argument("--binary", default=None, help="tdsez.x (default: TDSEZ_BINARY or PATH)")
+    p_val.add_argument("--reference", default=None, help="Second binary: compare every column")
+    p_val.add_argument("--np", type=int, default=4, help="MPI ranks per run")
+    p_val.add_argument("--workdir", default="zkit-validation", help="Directory for the runs")
+    p_val.add_argument("--quick", action="store_true", help="2D cases only (about a minute)")
+
     args = parser.parse_args(argv)
     if args.command == "summary":
         return cmd_summary(args)
@@ -194,6 +215,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_plot(args)
     if args.command == "tdm-plot":
         return cmd_tdm_plot(args)
+    if args.command == "validate":
+        return cmd_validate(args)
 
     parser.print_help()
     return 1

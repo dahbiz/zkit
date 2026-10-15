@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+import numpy as np
 import sympy as sp
 
 __all__ = ["Physics", "parse_expression"]
@@ -138,6 +139,10 @@ def parse_expression(src: str, variables=("x", "y", "t"), constants=None):
     return sp.sympify(s, locals={**_SYMPY_NS, **consts, **syms})
 
 
+def _axis(axis) -> str:
+    return axis if isinstance(axis, str) else "xyz"[int(axis)]
+
+
 class Physics:
     """Physics of a TDSEZ run, extracted automatically from its input deck."""
 
@@ -201,6 +206,7 @@ class Physics:
         self._V5x = sp.lambdify((x,), V5_x, "numpy")
 
         self._E = {ax: sp.lambdify((t,), e, "numpy") for ax, e in self._E_expr.items()}
+        self._dE = {}
 
         # time after which the field is zero (None without a field)
         self.laser_on_until = self._detect_laser_end()
@@ -259,6 +265,21 @@ class Physics:
     def Ez(self, t):
         """Laser field E_z(t)."""
         return self._E["z"](t)
+
+    def field(self, axis, t):
+        """Field E_a(t) on axis 0, 1, 2 (or "x", "y", "z")."""
+        return self._E[_axis(axis)](t)
+
+    def field_expr(self, axis):
+        """Field E_a(t) as a sympy expression in t (0 on an uncoupled axis)."""
+        return self._E_expr[_axis(axis)]
+
+    def field_derivative(self, axis, t):
+        """dE_a/dt, differentiated symbolically from the deck's expression."""
+        ax = _axis(axis)
+        if ax not in self._dE:
+            self._dE[ax] = sp.lambdify((self._t,), sp.diff(self._E_expr[ax], self._t), "numpy")
+        return np.broadcast_to(self._dE[ax](t), np.shape(t))
 
     # Historical names: these return the field E(t), not a vector potential.
     Ax = Ex

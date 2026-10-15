@@ -31,6 +31,7 @@ zkit: analysis tools for TDSEZ
    wigner
    visualization
    physics-outputs
+   validation
    troubleshooting
 
 .. toctree::

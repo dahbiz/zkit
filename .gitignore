@@ -66,3 +66,6 @@ Thumbs.db
 static/
 td/
 _tdsez_build/
+
+# zkit validate runs
+zkit-validation/

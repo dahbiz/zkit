@@ -171,17 +171,29 @@ def infinite_well_energy(n, L, m=1.0):
     return (np.pi**2 / 2.0) * (n**2) / (L**2)
 
 
-def find_binary(prefer="tdsez"):
-    """Locate the built tdsez executable under build-split/ (or build/)."""
+def find_binary(prefer="tdsez.x"):
+    """Locate the TDSE-Z executable: TDSEZ_BINARY, then ``prefer`` (tdsez.x) or
+    tdsez on PATH, then build-split/ or build/ next to the source tree."""
     import glob
     import os
+    import shutil
 
+    explicit = os.environ.get("TDSEZ_BINARY")
+    if explicit:
+        return explicit
+    for name in (prefer, "tdsez.x", "tdsez"):
+        found = shutil.which(name)
+        if found:
+            return found
     here = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     for d in ("build-split", "build"):
-        cands = sorted(glob.glob(os.path.join(here, d, prefer)))
-        if cands:
-            return cands[0]
-    raise FileNotFoundError(f"could not find '{prefer}' binary under {here}")
+        for name in (prefer, "tdsez.x", "tdsez"):
+            cands = sorted(glob.glob(os.path.join(here, d, name)))
+            if cands:
+                return cands[0]
+    raise FileNotFoundError(
+        f"could not find the TDSE-Z binary: set TDSEZ_BINARY or put {prefer} on PATH"
+    )
 
 
 def run(input_file, binary=None, nproc=4):

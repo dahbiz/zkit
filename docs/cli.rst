@@ -95,3 +95,13 @@ Options:
 - ``--outdir`` output directory.
 - ``--prefix`` output filename prefix.
 - ``--dpi`` figure DPI.
+
+validate
+~~~~~~~~
+
+Run TDSE-Z on analytic cases and check every output column; see
+:doc:`validation`.
+
+.. code-block:: bash
+
+   zkit validate --binary /path/to/tdsez.x --np 8 [--reference old/tdsez.x] [--quick]

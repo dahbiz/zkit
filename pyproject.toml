@@ -39,6 +39,10 @@ dependencies = [
 
 [project.optional-dependencies]
 physics = ["sympy>=1.11"]
+validation = [
+    "scipy>=1.12",
+    "sympy>=1.11",
+]
 reconstruction = []
 viz = ["matplotlib>=3.7"]
 vtk = ["pyvista>=0.43"]
@@ -54,6 +58,8 @@ test = [
     "build>=1.2",
     "pytest>=8",
     "ruff>=0.9",
+    "scipy>=1.12",
+    "sympy>=1.11",
 ]
 
 [project.scripts]
