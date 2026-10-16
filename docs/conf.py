@@ -52,6 +52,7 @@ html_logo = "_static/logo.png"
 html_favicon = "_static/logo.png"
 html_title = "zkit documentation"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_show_sourcemap = False
 html_show_sphinx = False

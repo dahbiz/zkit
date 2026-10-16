@@ -47,6 +47,17 @@ zkit: analysis tools for TDSE-Z
 
    api
 
+Funding acknowledgement
+=======================
+
+Z.D. acknowledges funding from UK Research and Innovation (UKRI) under the UK
+government's Horizon Europe funding guarantee [Grant No. EP/Z000807/1].
+
+.. image:: https://upload.wikimedia.org/wikipedia/commons/9/9c/UKRI_EPSR_Council-Logo_Horiz-RGB.png
+   :alt: UKRI Engineering and Physical Sciences Research Council
+   :width: 220px
+   :align: center
+
 Indices and tables
 ==================
 

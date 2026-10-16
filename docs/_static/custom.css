@@ -1,0 +1,29 @@
+/* Light panel behind the logo: the theme's blue (#2980B9) hides the
+   blue and teal parts of the zkit logo. */
+.wy-side-nav-search {
+  background-color: #ffffff;
+  border-bottom: 1px solid #dfe5ee;
+}
+.wy-side-nav-search > a,
+.wy-side-nav-search .wy-dropdown > a {
+  color: #2c3e50;
+}
+.wy-side-nav-search > div.version {
+  color: #5a6b7d;
+}
+.wy-side-nav-search input[type="text"] {
+  border-color: #c9d6e8;
+}
+.wy-side-nav-search img.logo {
+  background-color: transparent;
+  max-width: 150px;
+}
+/* small-screen top bar */
+.wy-nav-top {
+  background-color: #ffffff;
+  border-bottom: 1px solid #dfe5ee;
+}
+.wy-nav-top a,
+.wy-nav-top i {
+  color: #2c3e50;
+}
