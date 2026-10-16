@@ -21,6 +21,12 @@ zkit.io
    io/surff
    io/scid
 
+zkit.analytic
+-------------
+
+.. automodule:: zkit.analytic
+   :members:
+
 zkit.viz
 --------
 

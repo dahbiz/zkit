@@ -11,6 +11,10 @@ output table through :class:`zkit.Run` and checks every column:
   signs): the state stays a coherent state, which gives <r>, <p>, all
   energies, the ground-state population, the complex autocorrelation and the
   Berry phase;
+* **transition dipoles** (1D, 2D, 3D): the spectrum and every |<i|x_a|j>| of
+  the post-processor ``dipoles.x`` against the exact oscillator (distinct
+  frequencies per axis) and hard-wall box results (:mod:`zkit.analytic`), and
+  the rows of ``dipole_spectrum.x`` and ``recombination.x`` against the full matrix;
 * **position-dependent mass** (2D, 3D; no closed form): a field-free
   eigenstate is stationary (D, J, A, energies constant, autocorrelation
   exp(-i E0 t)); a driven state obeys Ehrenfest (J = dD/dt, A = d2D/dt2), the
@@ -435,9 +439,118 @@ OutputStrideWFS = 100000
         )  # fmt: skip
 
 
+TDM_CASES = {
+    # name: (dimension, deck body, reference, tolerance for energies and |d_ij|)
+    "tdm oscillator 1D": (
+        1,
+        """Domain = -16, 16
+SplineDegree = 6
+NQuadratures = 10
+NSplines = 120
+Potential = 0.5*0.25*x*x
+""",
+        ("oscillator", (0.5,)),
+        1e-6,
+    ),
+    "tdm box 1D": (
+        1,
+        """Domain = -5, 5
+SplineDegree = 6
+NQuadratures = 10
+NSplines = 120
+BoundaryType = dirichlet
+Potential = 0
+""",
+        ("box", 10.0),
+        1e-6,
+    ),
+    "tdm oscillator 2D": (
+        2,
+        """Domain = -14, 14, -14, 14
+SplineDegree = 6
+NQuadratures = 10
+NSplines = 50
+Potential = 0.5*(0.36*x*x + 0.6889*y*y)
+""",
+        ("oscillator", (0.6, 0.83)),
+        1e-5,
+    ),
+    "tdm oscillator 3D": (
+        3,
+        """Domain = -10, 10, -10, 10, -10, 10
+SplineDegree = 5
+NQuadratures = 8
+NSplines = 24
+Potential = 0.5*(0.36*x*x + 0.6889*y*y + 1.3689*z*z)
+""",
+        ("oscillator", (0.6, 0.83, 1.17)),
+        2e-3,
+    ),
+}
+
+
+def _tdm_deck(dim: int, body: str, n_states: int) -> str:
+    axes = "xyz"[:dim]
+    return (
+        f"Verbose = 0\nDimension = {dim}\nKnotSequence = uniform\nMass = 1.0\n{body}"
+        f"TargetEigenvalue = 0.0\nNBoundStates = {n_states}\nNBoundStatesSave = 1\n"
+        f"SaveDipoleAxes = {axes}\nEnablePropagation = 0\nPolarization = x\n"
+    )
+
+
+def transition_dipoles(v: "Validator", case: str, n_states: int = 6) -> None:
+    """Spectrum and transition dipoles of a TDM_CASES entry against the exact results;
+    dipole_spectrum.x / recombination.x rows against dipoles.x on every axis."""
+    import csv
+
+    from zkit.analytic import box_tdm, compare_tdm, oscillator_tdm
+    from zkit.io.tdm import read_tdm
+
+    dim, body, (kind, par), tol = TDM_CASES[case]
+    ref = oscillator_tdm(par, n_states) if kind == "oscillator" else box_tdm(par, n_states)
+    name = case.replace(" ", "_")
+    run = v._run(name, _tdm_deck(dim, body, n_states), v.binary)
+    bindir = Path(v.binary).resolve().parent
+    tool = lambda t: str(bindir / t)  # noqa: E731
+    r = subprocess.run(
+        [tool("dipoles.x"), "in.inp"], cwd=run.run_dir, capture_output=True, text=True
+    )
+    if r.returncode:
+        raise RuntimeError(f"{case}: dipoles.x failed\n{r.stdout[-800:]}\n{r.stderr[-800:]}")
+    tdm = read_tdm(run.path("eigen"))
+    energies = run.spectrum.values
+    errs = compare_tdm(tdm, energies, ref)
+    v.report.checks.append(Check(case, "energies = exact", errs["energies"], tol))
+    for a in "xyz"[:dim]:
+        v.report.checks.append(Check(case, f"|<i|{a}|j>| = exact (dipoles.x)", errs[a], tol))
+        d = tdm[f"tdm_{a}"]
+        i0 = int(np.argmin(energies))  # ground state as bra
+        for t, out in (
+            ("dipole_spectrum.x", f"in_dij_D{a}_i{i0}.csv"),
+            ("recombination.x", f"in_drec_D{a}.csv"),
+        ):
+            args = [tool(t), "in.inp", "-i", str(i0), "-Ethr", "-1e9", "-axis", a]
+            r = subprocess.run(args, cwd=run.run_dir, capture_output=True, text=True)
+            if r.returncode:
+                raise RuntimeError(f"{case}: {t} failed\n{r.stdout[-800:]}\n{r.stderr[-800:]}")
+            with open(run.run_dir / "static" / out, newline="") as fh:
+                rows = list(csv.DictReader(fh))
+            if t == "dipole_spectrum.x":
+                got = np.array([abs(complex(float(w["Re_d"]), float(w["Im_d"]))) for w in rows])
+                want = np.abs(d[i0, [int(w["j"]) for w in rows]])
+            else:  # rows sorted by energy; d_j column is the regular dipole
+                got = np.array([abs(complex(float(w["Re_dj"]), float(w["Im_dj"]))) for w in rows])
+                want = np.abs(d[i0, np.argsort(energies)])
+            v.check(case, f"{t} row {a} = dipoles.x", got, want, 1e-10, max(np.max(want), 1e-300))
+
+
 def validate(binary, reference=None, nproc=4, workdir="zkit-validation", quick=False) -> Report:
     """Run the validation suite; ``quick`` runs the 2D cases only (about a minute)."""
     v = Validator(binary, reference, nproc, workdir)
+    for case in TDM_CASES:
+        if quick and "3D" in case:
+            continue
+        transition_dipoles(v, case)
     for q in (-1.0, 1.0):
         v.driven_oscillator_2d(q)
         if quick:
@@ -460,5 +573,6 @@ __all__ = [
     "free_packet",
     "free_packet_autocorrelation",
     "time_derivative",
+    "transition_dipoles",
     "validate",
 ]

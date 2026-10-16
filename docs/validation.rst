@@ -35,6 +35,16 @@ field term ``s E.r``. Columns of ``td/<name>_observables.h5``:
 Cases
 -----
 
+**Transition dipoles** (1D, 2D, 3D). A stationary run saves the eigenstates
+and the dipole operators; ``dipoles.x`` computes every :math:`d^{(a)}_{ij}`.
+The spectrum and every :math:`|d_{ij}|` are compared with
+:mod:`zkit.analytic`: oscillators with one frequency per axis
+(:math:`\omega = 0.5`; :math:`(0.6, 0.83)`; :math:`(0.6, 0.83, 1.17)`),
+:math:`\langle n|x_a|n+1\rangle = \sqrt{(n+1)/2\omega_a}`, and the hard-wall
+box of width 10, :math:`\langle n|x|m\rangle = -8Lnm/(\pi^2(n^2-m^2)^2)` for
+:math:`n+m` odd. The rows of ``dipole_spectrum.x`` and ``recombination.x``
+must equal the full matrix on every axis. ``--quick`` skips the 3D case.
+
 **Free Gaussian packet in a uniform field** (3D, mass 0.7, ``q = -1`` and
 ``+1``). For a linear potential Ehrenfest is exact:
 

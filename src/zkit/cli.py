@@ -102,7 +102,7 @@ def cmd_plot(args: argparse.Namespace) -> int:
 def cmd_tdm_plot(args: argparse.Namespace) -> int:
     eig = Path(args.eig_file)
     # Accept either the static/<name>_eigen.h5 file, or a run-dir + input name.
-    if eig.is_file():
+    if eig.suffix == ".h5" and eig.is_file():
         eig_path = eig
     else:
         from zkit.paths import output_path

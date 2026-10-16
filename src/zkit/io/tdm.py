@@ -1,14 +1,15 @@
 """Read transition-dipole-moment (TDM) data from TDSEZ static HDF5 output.
 
-The TDSEZ binary writes the FULL transition-dipole matrices between every
-converged eigenstate into ``static/<name>_eigen.h5`` as the datasets
+The full transition-dipole matrices d_ij = ⟨i|D_α|j⟩ between the saved
+eigenstates are written by TDSE-Z's ``dipoles.x`` (run it in the run
+directory after a solve with ``NBoundStatesSave = 1`` and ``SaveDipoleAxes``)::
 
-    tdm_x, tdm_y, tdm_z   (shape (N*N, 2), row-major [re, im] per element)
+    static/<name>_tdm_Dx.npy, _tdm_Dy.npy, _tdm_Dz.npy   complex (N, N)
 
-where element ``[i*N + j]`` holds ⟨i|D_α|j⟩.  These are the complete Hermitian
-matrices at double/complex precision — the optimal machine-readable form (the
-legacy ``static/<name>_tdm.txt`` is human-facing text and drops small /
-zero / diagonal entries, so it is unsuitable for programmatic use).
+:func:`read_tdm` reads them next to ``static/<name>_eigen.h5`` (also under the
+former names ``TDM_Dx_<name>.inp.npy``), or the datasets ``tdm_x/y/z``
+(shape (N*N, 2), [re, im]) when an eigen file carries them. The text summary
+``static/<name>_tdm.txt`` drops small and diagonal entries and is not read.
 
 This module complements the eigen reader
 (:func:`zkit.io.eigen.read_eigen`): read the HDF5 EigenData file with either
@@ -58,7 +59,7 @@ def read_tdm(path: Union[str, Path]) -> Dict[str, np.ndarray]:
     """
     h5_path = Path(path)
     if not h5_path.exists():
-        raise FileNotFoundError(f"EigenData HDF5 not found: {h5_path}")
+        raise FileNotFoundError(f"eigen file not found: {h5_path}")
     out: Dict[str, np.ndarray] = {}
     with h5py.File(h5_path, "r") as h5_file:
         for axis_name in ("x", "y", "z"):
@@ -66,7 +67,34 @@ def read_tdm(path: Union[str, Path]) -> Dict[str, np.ndarray]:
             tdm_matrix = _read_tdm_dataset(h5_file, dataset_name)
             if tdm_matrix is not None:
                 out[dataset_name] = tdm_matrix
+    if out:
+        return out
+    for axis_name, npy in _tdm_npy_files(h5_path).items():
+        out[f"tdm_{axis_name}"] = np.load(npy)
     return out
+
+
+def _tdm_npy_files(h5_path: Path) -> Dict[str, Path]:
+    """dipoles.x output next to an eigen file: static/<name>_tdm_D<a>.npy
+    (eigen file <name>_eigen.h5), or TDM_D<a>_<input>.npy (EigenData_<input>.h5)."""
+    f = h5_path.name
+    if f.endswith("_eigen.h5"):
+        name = f[: -len("_eigen.h5")]
+        cands = {a: [h5_path.parent / f"{name}_tdm_D{a}.npy"] for a in "xyz"}
+    elif f.startswith("EigenData_"):
+        inp = f[len("EigenData_") : -len(".h5")]
+        stem = inp.rsplit(".", 1)[0]
+        cands = {
+            a: [h5_path.parent / f"TDM_D{a}_{inp}.npy", h5_path.parent / f"{stem}_tdm_D{a}.npy"]
+            for a in "xyz"
+        }
+    else:
+        return {}
+    return {
+        a: next(p for p in ps if p.exists())
+        for a, ps in cands.items()
+        if any(p.exists() for p in ps)
+    }
 
 
 def tdm_of_state(
@@ -104,8 +132,8 @@ def tdm_of_state(
     tdm = read_tdm(path)
     if not tdm:
         raise KeyError(
-            f"no TDM datasets in {path} "
-            f"(binary predates HDF5 TDM output, or no dipole axis was assembled)"
+            f"no transition dipoles for {path}: run dipoles.x in the run directory "
+            f"(after a solve with NBoundStatesSave = 1 and SaveDipoleAxes)"
         )
     if axes is None:
         want = list(tdm.keys())  # e.g. ["tdm_x", "tdm_z"]
