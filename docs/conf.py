@@ -42,6 +42,7 @@ intersphinx_mapping = {
 if os.environ.get("SPHINX_OFFLINE"):
     intersphinx_mapping = {}
 
+templates_path = ["_templates"]
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "collapse_navigation": True,

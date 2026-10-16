@@ -15,6 +15,9 @@
   <img src="https://img.shields.io/badge/license-BSD--2--Clause-3b6ea5" alt="License">
 </p>
 
+<p align="center"><sub><em>Z is not the author’s initial. Z is not the third axis.<br>
+Z is ⵣ (yaz), the Amazigh sign of the free man and the free people.</em></sub></p>
+
 ---
 
 `zkit` is the Python companion of [TDSE-Z](https://github.com/dahbiz/tdsez), a
