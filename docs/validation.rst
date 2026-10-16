@@ -22,7 +22,7 @@ Conventions
 -----------
 
 ``q = Charge`` (``-1`` electron), ``s = -q``: the carrier sees ``s V`` and the
-field term ``s E.r``. Columns of ``td/TimeEvolutionData_<input>.h5``:
+field term ``s E.r``. Columns of ``td/<name>_observables.h5``:
 
 .. code-block:: text
 

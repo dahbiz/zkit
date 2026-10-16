@@ -1,4 +1,4 @@
-"""Read td/wfs_<inp>.h5 files produced by PETSc HDF5 viewer."""
+"""Read td/<name>_wfs.h5 files produced by PETSc HDF5 viewer."""
 
 from __future__ import annotations
 

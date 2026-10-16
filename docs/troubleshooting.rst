@@ -56,13 +56,18 @@ HDF5 file not found or empty
 -----------------------------
 
 Check that the run directory contains ``td/`` and ``static/`` subdirectories and
-that the basename passed to ``Run(run_dir, basename)`` matches the files:
+that the input name passed to ``Run(run_dir, "h2p.inp")`` matches the files
+(``h2p`` is the input file name without extension):
 
 ::
 
     run_dir/
-      td/TimeEvolutionData_<basename>.h5
-      static/EigenData_<basename>.h5
+      td/h2p_observables.h5
+      static/h2p_eigen.h5
+
+Runs of earlier TDSE-Z versions (``td/TimeEvolutionData_h2p.inp.h5``,
+``static/EigenData_h2p.inp.h5``) are found as well; ``run.path("observables")``
+shows which file is read.
 
 Slow norm or reconstruction for large grids
 --------------------------------------------

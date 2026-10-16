@@ -30,7 +30,7 @@ The run logs are `tdsez/quick.out` and `scid/quick.out.gz`.
 
 The data files are:
 
-* **TDSE-Z:** `td/surff_quick.inp.h5`, `td/TimeEvolutionData_quick.inp.h5` and `static/EigenData_quick.inp.h5`. The wave-function file is not included.
+* **TDSE-Z:** `td/quick_surff.h5`, `td/quick_observables.h5` and `static/quick_eigen.h5`. The wave-function file is not included.
 * **SCID-TDSE:** `detail.table.gz` (norm, energy, dipole, acceleration and field) and `pes_volkov.table.gz`, both gzipped. The 28 MB `field.table` is left out because `detail.table` carries the same field.
 
 ## Reproduce

@@ -138,13 +138,13 @@ def test_time_axis_when_dipoles_disabled(tmp_path):
 
     n = 5
     t = np.arange(n) * 0.1
-    with h5py.File(tmp_path / "TimeEvolutionData_x.inp.h5", "w") as f:
+    with h5py.File(tmp_path / "x_observables.h5", "w") as f:
         f["dipoles"] = np.zeros((n, 4))
         f["populations"] = np.column_stack([t, np.ones(n)])
         f["energies"] = np.column_stack([t, np.zeros((n, 6))])
         f["currents"] = np.zeros((n, 11))
         f["autocorrelation"] = np.zeros((n, 3))
-    ev = read_evolution(tmp_path / "TimeEvolutionData_x.inp.h5")
+    ev = read_evolution(tmp_path / "x_observables.h5")
     assert np.allclose(ev.time, t)
 
 

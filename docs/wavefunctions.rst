@@ -3,8 +3,8 @@ Wavefunctions
 
 zkit reads two kinds of wavefunction outputs:
 
-1. Time-series snapshots from ``td/wfs_<input>.h5``
-2. Static eigenstates from ``static/EigenData_<input>.h5``
+1. Time-series snapshots from ``td/<name>_wfs.h5``
+2. Static eigenstates from ``static/<name>_eigen.h5``
 
 Both contain IGA B-spline coefficients, not real-space arrays. zkit evaluates
 the basis with its bundled ``igakit.igalib.bsp`` compatibility layer so you
@@ -18,7 +18,7 @@ Read snapshots
 
    from zkit.io.wavefunction import read_wfs
 
-   wfs = read_wfs("td/wfs_h2p.inp.h5")
+   wfs = read_wfs("td/h2p_wfs.h5")
    print("snapshots:", wfs.n_snapshots)
    print("data shape:", wfs.data.shape)
    print("dimension:", wfs.dimension)
@@ -34,7 +34,7 @@ Reconstruct a snapshot
    from zkit.io.wfs_field import reconstruct_wfs
 
    res = reconstruct_wfs(
-       "td/wfs_h2p.inp.h5",
+       "td/h2p_wfs.h5",
        step=0,
        npoints=240,
        axes=None,
@@ -64,7 +64,7 @@ Reconstruct a static eigenstate
 
    from zkit.io.eigen import read_eigen
 
-   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("static/h2p_eigen.h5")
    res = eigen.reconstruct(istate=0, npoints=240)
    print(res["psi"].shape)
 
@@ -75,7 +75,7 @@ Exact norm via Gauss quadrature
 
    from zkit.io.wfs_field import compute_wfs_norm
 
-   norm = compute_wfs_norm("td/wfs_h2p.inp.h5", step=0, nq=5)
+   norm = compute_wfs_norm("td/h2p_wfs.h5", step=0, nq=5)
    print(norm)
 
 ``nq=5`` is exact for spline degree <= 9. Higher degrees need larger ``nq``.
@@ -87,7 +87,7 @@ VTK export
 
    from zkit.io.wfs_field import reconstruct_wfs, wfs_to_vtk
 
-   res = reconstruct_wfs("td/wfs_h2p.inp.h5", step=0, npoints=120)
+   res = reconstruct_wfs("td/h2p_wfs.h5", step=0, npoints=120)
    wfs_to_vtk(res, "figures/wfs.vts")
 
 Supported extensions:

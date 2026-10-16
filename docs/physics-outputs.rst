@@ -46,7 +46,7 @@ Read observables
 
    from zkit.io.evolution import read_evolution
 
-   evolution = read_evolution("td/TimeEvolutionData_h2p.inp.h5")
+   evolution = read_evolution("td/h2p_observables.h5")
 
    time = evolution.time
    dipoles = evolution.dipoles

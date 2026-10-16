@@ -26,12 +26,12 @@ Summarize one simulation run.
    zkit summary h2p.inp --run-dir /data/run01
 
 Shows dimension, step count, time step, final time, evolution dataset shapes,
-and eigenstate count if ``static/EigenData_<input>.h5`` is present.
+and eigenstate count if ``static/<name>_eigen.h5`` is present.
 
 batch
 ~~~~~
 
-Summarize every ``TimeEvolutionData_*.h5`` under ``run_dir/td/``.
+Summarize every ``<name>_observables.h5`` under ``run_dir/td/``.
 
 .. code-block:: bash
 
@@ -52,7 +52,7 @@ Render one wavefunction snapshot to PNG.
 
 .. code-block:: bash
 
-   zkit plot-wfs td/wfs_h2p.inp.h5 \
+   zkit plot-wfs td/h2p_wfs.h5 \
      --step 0 \
      --outdir figures \
      --npoints 240 \
@@ -73,11 +73,11 @@ tdm-plot
 ~~~~~~~~
 
 Plot transition-dipole diagrams and the ``|μ_ij|`` heatmap from an
-``EigenData_*.h5`` file.
+``<name>_eigen.h5`` file.
 
 .. code-block:: bash
 
-   zkit tdm-plot static/EigenData_h2p.inp.h5 \
+   zkit tdm-plot static/h2p_eigen.h5 \
      --run-dir /data/run01 \
      --axes x,z \
      --min-mu 1e-3 \
@@ -88,7 +88,7 @@ Plot transition-dipole diagrams and the ``|μ_ij|`` heatmap from an
 
 Options:
 
-- ``eig_file`` EigenData path, or just the basename when combined with ``--run-dir``.
+- ``eig_file`` ``static/<name>_eigen.h5`` path, or the input name when combined with ``--run-dir``.
 - ``--axes`` comma-separated axes, for example ``x,y,z``.
 - ``--min-mu`` minimum transition magnitude to draw.
 - ``--color-by`` ``strength`` or ``oscillator strength``.
@@ -100,12 +100,12 @@ pes
 ~~~
 
 Photoelectron energy spectrum dP/dE from a grid-mode t-SURFF file
-(``td/surff_<input>.h5``), optionally against a SCID-TDSE ``sts_volkov_table``
+(``td/<name>_surff.h5``), optionally against a SCID-TDSE ``sts_volkov_table``
 (plain or gzipped). Writes ``<prefix>_dPdE.txt`` and ``<prefix>_dPdE.png``.
 
 .. code-block:: bash
 
-   zkit pes td/surff_quick.inp.h5 --scid scid/pes_volkov.table.gz --outdir figures
+   zkit pes td/quick_surff.h5 --scid scid/pes_volkov.table.gz --outdir figures
 
 Without ``--scid`` the spectrum is evaluated on ``--nk`` ``|k|`` points up to the
 grid edge and ``--ntheta`` polar angles.

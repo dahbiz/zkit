@@ -1,7 +1,7 @@
 """Transition-diagram plots from TDSEZ static TDM output.
 
 Two complementary views of the transition-dipole matrices written by the
-TDSEZ binary into ``static/EigenData_<prefix>.h5`` (see :mod:`zkit.io.tdm`):
+TDSEZ binary into ``static/<name>_eigen.h5`` (see :mod:`zkit.io.tdm`):
 
 * :func:`plot_transition_diagram` — a spectroscopic energy-level diagram: one
   horizontal line per eigenstate at its energy, with an arrow between every

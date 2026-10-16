@@ -12,8 +12,8 @@ Data
 
     /scratch/cavity_qed/
       td/
-        wfs_cavity_1.h5
-        TimeEvolutionData_cavity_1.h5
+        cavity_1_wfs.h5
+        cavity_1_observables.h5
 
 1. Load snapshots
 -----------------
@@ -22,7 +22,7 @@ Data
 
    from zkit.io.wavefunction import read_wfs
 
-   wfs = read_wfs("/scratch/cavity_qed/td/wfs_cavity_1.h5")
+   wfs = read_wfs("/scratch/cavity_qed/td/cavity_1_wfs.h5")
    print("snapshots:", wfs.n_snapshots)
    print("dof:", wfs.data.shape[1])
    print("time spacing is implied by stride:", wfs.times[:5])
@@ -38,7 +38,7 @@ Data
    snapshots = []
    for step in range(wfs.n_snapshots):
        res = reconstruct_wfs(
-           "/scratch/cavity_qed/td/wfs_cavity_1.h5",
+           "/scratch/cavity_qed/td/cavity_1_wfs.h5",
            step=step,
            npoints=nx if wfs.dim == 1 else (nx, ny),
        )

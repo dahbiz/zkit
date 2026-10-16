@@ -24,6 +24,7 @@ from zkit.models import (
     TSSeries,
     WavefunctionSeries,
 )
+from zkit.paths import output_path, run_name
 
 
 class Run:
@@ -53,6 +54,7 @@ class Run:
         self.run_dir = Path(run_dir)
         self.input_file = Path(basename)
         self.base = self.input_file.name
+        self.name = run_name(self.input_file)  # h2p.inp -> h2p, the prefix of every output
         self.td_dir = self.run_dir / "td"
         self.static_dir = self.run_dir / "static"
 
@@ -62,6 +64,12 @@ class Run:
         self._wavefunctions: Optional[WavefunctionSeries] = None
         self._ts: Optional[TSSeries] = None
         self._physics = None
+
+    def path(self, kind: str) -> Path:
+        """Output file of this run: eigen, tdm, observables, wfs, surff or ts
+        (``static/<name>_eigen.h5``, ``td/<name>_observables.h5``, ...; the
+        names of earlier TDSE-Z versions are found too)."""
+        return output_path(self.run_dir, self.input_file, kind)
 
     @property
     def meta(self) -> SimulationMeta:
@@ -74,15 +82,10 @@ class Run:
         # Prefer the data itself (works even when the input file is absent);
         # fall back to the parsed input-file metadata.
         try:
-            ev_path = self.td_dir / f"TimeEvolutionData_{self.base}.h5"
-            if ev_path.exists():
-                return detect_dimension(ev_path)
-            eig_path = self.static_dir / f"EigenData_{self.base}.h5"
-            if eig_path.exists():
-                return detect_dimension(eig_path)
-            wfs_path = self.td_dir / f"wfs_{self.base}.h5"
-            if wfs_path.exists():
-                return detect_dimension(wfs_path)
+            for kind in ("observables", "eigen", "wfs"):
+                p = self.path(kind)
+                if p.exists():
+                    return detect_dimension(p)
         except (ValueError, OSError):
             pass
         return self.meta.dimension
@@ -90,7 +93,7 @@ class Run:
     @property
     def evolution(self) -> TimeEvolution:
         if self._evolution is None:
-            path = self.td_dir / f"TimeEvolutionData_{self.base}.h5"
+            path = self.path("observables")
             # Detect dimension from the data; only fall back to the
             # input-file parse if the file carries no usable signal.
             try:
@@ -103,21 +106,21 @@ class Run:
     @property
     def spectrum(self) -> EigenData:
         if self._eigen is None:
-            path = self.static_dir / f"EigenData_{self.base}.h5"
+            path = self.path("eigen")
             self._eigen = read_eigen(path)
         return self._eigen
 
     @property
     def wavefunctions(self) -> WavefunctionSeries:
         if self._wavefunctions is None:
-            path = self.td_dir / f"wfs_{self.base}.h5"
+            path = self.path("wfs")
             self._wavefunctions = read_wfs(path)
         return self._wavefunctions
 
     @property
     def surff(self) -> SurffSpectrum:
-        """t-SURFF spectrum (``td/surff_<input>.h5``)."""
-        return read_surff(self.td_dir / f"surff_{self.base}.h5")
+        """t-SURFF spectrum (``td/<name>_surff.h5``)."""
+        return read_surff(self.path("surff"))
 
     @property
     def physics(self) -> "Physics":
@@ -130,7 +133,7 @@ class Run:
     @property
     def ts(self) -> TSSeries:
         if self._ts is None:
-            path = self.run_dir / f"ts_{self.base}.h5"
+            path = self.path("ts")
             self._ts = read_timeseries(path)
         return self._ts
 

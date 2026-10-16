@@ -14,9 +14,11 @@ def ensure_dir(path: Union[str, Path]) -> Path:
 
 
 def discover_runs(root: Union[str, Path]) -> list[Path]:
-    """Find all ``TimeEvolutionData_*.h5`` files under *root*."""
-    root = Path(root)
-    return sorted((root / "td").glob("TimeEvolutionData_*.h5")) if (root / "td").is_dir() else []
+    """Time-series files (``td/<name>_observables.h5``, or the former
+    ``td/<name>_observables.h5``) under *root*."""
+    from zkit.paths import list_runs, output_path
+
+    return [output_path(root, name, "observables") for name in list_runs(root)]
 
 
 __all__ = ["ensure_dir", "discover_runs"]

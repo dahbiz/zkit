@@ -3,7 +3,7 @@ r"""Campaign driver for the marginal-Wigner analysis of TDSE-Z runs.
 The functions read the physics (potential, mass, field, snapshot times) from
 the TDSE-Z input deck through :class:`zkit.physics.Physics` and
 :class:`zkit.simulation.Run`, and the wavefunction snapshots from
-``td/wfs_<input>.h5``. They write CSV tables and figures with fixed file
+``td/<name>_wfs.h5``. They write CSV tables and figures with fixed file
 names (``znse_*``) into the working or run directory; the default deck and
 wavefunction file names are those of the ZnSe quantum-dot campaign this module
 was written for.
@@ -444,7 +444,7 @@ def analyze_covariance(deck, wfs, run_dir="."):
     deck : str
         TDSE-Z input deck.
     wfs : str
-        Wavefunction file ``td/wfs_<input>.h5``.
+        Wavefunction file ``td/<name>_wfs.h5``.
     run_dir : str, optional
         Directory of the run and of the output files.
 
@@ -594,7 +594,7 @@ def analyze_autocorr(
     deck : str
         TDSE-Z input deck.
     wfs : str
-        Wavefunction file ``td/wfs_<input>.h5``.
+        Wavefunction file ``td/<name>_wfs.h5``.
     run_dir : str, optional
         Directory of the run and of the output files.
     ref : int, optional
@@ -971,18 +971,30 @@ def plot_autocorr_overlay(
 ):
     """Figure 5a upgraded: full-resolution TDSE TimeEvolutionData |A(t)|^2
     (native dt) with the wfs-derived validation points overlaid.  Uses the
-    autocorrelation dataset already present in TimeEvolutionData_*.h5.
+    autocorrelation dataset already present in <name>_observables.h5.
     """
     if sizes is None:
         import glob as _gl
 
-        ws = sorted(_gl.glob(os.path.join(run_dir, "wfs_ZnSe*.h5")))
+        ws = sorted(
+            _gl.glob(os.path.join(run_dir, "ZnSe*_wfs.h5"))
+            + _gl.glob(os.path.join(run_dir, "wfs_ZnSe*.h5"))
+        )
         sizes = []
         for w in ws:
-            base = os.path.basename(w).replace("wfs_", "").replace(".h5", "")
-            ted = os.path.join(run_dir, "TimeEvolutionData_" + base + ".h5")
-            if not os.path.exists(ted):
-                ted = None
+            f = os.path.basename(w)
+            base = f[: -len("_wfs.h5")] if f.endswith("_wfs.h5") else f[len("wfs_") : -len(".h5")]
+            ted = next(
+                (
+                    p
+                    for p in (
+                        os.path.join(run_dir, base + "_observables.h5"),
+                        os.path.join(run_dir, "TimeEvolutionData_" + base + ".h5"),
+                    )
+                    if os.path.exists(p)
+                ),
+                None,
+            )
             sizes.append((os.path.basename(w), ted, base))
     if selected is None:
         selected = [s[2] for s in sizes] if len(sizes) <= 4 else [s[2] for s in sizes[:2]]

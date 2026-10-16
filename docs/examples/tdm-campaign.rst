@@ -11,10 +11,10 @@ Data
 
     /scratch/znse/
       static/
-        EigenData_znse_d20.h5
-        TDM_Dx_znse_d20.npy
-        EigenEnergies_znse_d20.npy
-        States_znse_d20.npy
+        znse_d20_eigen.h5
+        znse_d20_tdm_Dx.npy
+        znse_d20_energies.npy
+        znse_d20_states.npy
 
 1. Read the spectrum
 --------------------
@@ -23,7 +23,7 @@ Data
 
    from zkit.io.eigen import read_eigen
 
-   eigen = read_eigen("/scratch/znse/static/EigenData_znse_d20.h5")
+   eigen = read_eigen("/scratch/znse/static/znse_d20_eigen.h5")
    E = eigen.values
    print("states:", E.shape[0])
    print("lowest 5 energies:", E[:5])
@@ -35,7 +35,7 @@ Data
 
    from zkit.io.tdm import read_tdm, tdm_of_state, tdm_magnitude_of_state
 
-   tdm = read_tdm("/scratch/znse/static/EigenData_znse_d20.h5")
+   tdm = read_tdm("/scratch/znse/static/znse_d20_eigen.h5")
    print("axes present:", list(tdm.keys()))
 
    Dx = tdm["tdm_x"]
@@ -49,7 +49,7 @@ Data
 
    import numpy as np
 
-   row0 = tdm_of_state("/scratch/znse/static/EigenData_znse_d20.h5", 0, axes="x")
+   row0 = tdm_of_state("/scratch/znse/static/znse_d20_eigen.h5", 0, axes="x")
    mag = np.abs(row0["tdm_x"])
 
    idx = np.argsort(mag)[::-1]
@@ -64,7 +64,7 @@ Data
    from zkit.viz import plot_transition_diagram
 
    plot_transition_diagram(
-       "/scratch/znse/static/EigenData_znse_d20.h5",
+       "/scratch/znse/static/znse_d20_eigen.h5",
        outfile="figures/znse_diagram_x.png",
        axes="x",
        min_mu=0.05,
@@ -80,7 +80,7 @@ Data
    from zkit.viz.tdm import plot_tdm_matrix
 
    plot_tdm_matrix(
-       "/scratch/znse/static/EigenData_znse_d20.h5",
+       "/scratch/znse/static/znse_d20_eigen.h5",
        outfile="figures/znse_matrix_xz.png",
        axes=["x", "z"],
        dpi=200,
@@ -112,7 +112,7 @@ Data
    import numpy as np
 
    # strongest 200 transitions from ground state
-   row0 = tdm_of_state("/scratch/znse/static/EigenData_znse_d20.h5", 0)
+   row0 = tdm_of_state("/scratch/znse/static/znse_d20_eigen.h5", 0)
    mag = np.sqrt(sum(np.abs(v) ** 2 for v in row0.values()))
    order = np.argsort(mag)[::-1][:200]
 

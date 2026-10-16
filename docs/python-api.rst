@@ -75,27 +75,27 @@ Read individual files
    from zkit.io.base import detect_dimension
 
    # Eigenvalues and eigenvectors
-   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("static/h2p_eigen.h5")
    print(eigen.values.shape)
    print(eigen.vectors.shape)
 
    # Time evolution observables
-   evolution = read_evolution("td/TimeEvolutionData_h2p.inp.h5")
+   evolution = read_evolution("td/h2p_observables.h5")
    print(evolution.dimension)
 
    # PETSc TS snapshots
-   ts = read_timeseries("ts_h2p.inp.h5")
+   ts = read_timeseries("td/h2p_ts.h5")
    print(ts.times)
 
    # Wavefunction snapshots
-   wfs = read_wfs("td/wfs_h2p.inp.h5")
+   wfs = read_wfs("td/h2p_wfs.h5")
    print(wfs.n_snapshots)
    print(wfs.data.shape)
 
    # TDM
-   tdm = read_tdm("static/EigenData_h2p.inp.h5")
+   tdm = read_tdm("static/h2p_eigen.h5")
    print(tdm.keys())
-   print(tdm_of_state("static/EigenData_h2p.inp.h5", 0, axes="x")["tdm_x"].shape)
+   print(tdm_of_state("static/h2p_eigen.h5", 0, axes="x")["tdm_x"].shape)
 
 Visualize
 ---------
@@ -105,7 +105,7 @@ Visualize
    from zkit.viz import plot_wavefunction, plot_tdm
 
    plot_wavefunction(
-       "td/wfs_h2p.inp.h5",
+       "td/h2p_wfs.h5",
        step=0,
        outdir="figures",
        npoints=200,
@@ -114,7 +114,7 @@ Visualize
    )
 
    plot_tdm(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outdir="figures",
        axes=["x", "z"],
        min_mu=1e-3,

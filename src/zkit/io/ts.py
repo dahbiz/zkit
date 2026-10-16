@@ -1,4 +1,4 @@
-"""Read ts_<inp>.h5 files produced by PETSc TS viewer."""
+"""Read td/<name>_ts.h5 files produced by PETSc TS viewer."""
 
 from __future__ import annotations
 

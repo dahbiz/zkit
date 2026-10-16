@@ -21,7 +21,7 @@ With a reference binary every column of every table is also compared between
 the two builds.
 
 TDSE-Z conventions: q = Charge, s = -q; the carrier sees s V and the field
-term s E.r. Tables of ``td/TimeEvolutionData_<input>.h5``::
+term s E.r. Tables of ``td/<name>_observables.h5``::
 
     dipoles   2D: t Ex Ey Dx Dy Ax Ay      3D: t Ex Ey Ez Dx Dy Dz Ax Ay Az
     energies  t Kin Pot Int Tot InvMass Norm

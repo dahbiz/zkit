@@ -14,10 +14,10 @@ Assume the TDSE-Z binary produced:
 
     /data/h2p/
       td/
-        TimeEvolutionData_h2p.inp.h5
-        wfs_h2p.inp.h5
+        h2p_observables.h5
+        h2p_wfs.h5
       static/
-        EigenData_h2p.inp.h5
+        h2p_eigen.h5
 
 1. Summarize the run
 --------------------
@@ -113,7 +113,7 @@ data.
    from zkit.viz import plot_wavefunction
 
    plot_wavefunction(
-       "/data/h2p/td/wfs_h2p.inp.h5",
+       "/data/h2p/td/h2p_wfs.h5",
        step=0,
        outdir="figures",
        npoints=240,
@@ -128,7 +128,7 @@ data.
 
    from zkit.io.eigen import read_eigen
 
-   eigen = read_eigen("/data/h2p/static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("/data/h2p/static/h2p_eigen.h5")
    for i in range(3):
        res = eigen.reconstruct(istate=i, npoints=300)
        x = res["axes"][0]
@@ -143,7 +143,7 @@ data.
    from zkit.io.wfs_field import compute_wfs_norm
    from pathlib import Path
 
-   wfs_path = Path("/data/h2p/td/wfs_h2p.inp.h5")
+   wfs_path = Path("/data/h2p/td/h2p_wfs.h5")
    for step in [0, 50, 100, 150]:
        print(step, compute_wfs_norm(wfs_path, step=step, nq=5))
 

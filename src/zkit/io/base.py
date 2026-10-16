@@ -60,10 +60,10 @@ def detect_dimension(path: Union[str, Path]) -> int:
 
     Works for every TDSEZ output flavour without needing the input file:
 
-      * ``td/TimeEvolutionData_*.h5`` -> dipole column width (4/7/10).
-      * ``static/EigenData_*.h5``      -> ``run_metadata`` ``Dimension``
+      * ``td/<name>_observables.h5`` -> dipole column width (4/7/10).
+      * ``static/<name>_eigen.h5``      -> ``run_metadata`` ``Dimension``
         attribute, falling back to the number of ``knots_*`` datasets.
-      * ``td/wfs_*.h5``                -> number of ``knots_*`` datasets.
+      * ``td/<name>_wfs.h5``                -> number of ``knots_*`` datasets.
 
     Raises
     ------

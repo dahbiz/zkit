@@ -1,13 +1,13 @@
 """Read transition-dipole-moment (TDM) data from TDSEZ static HDF5 output.
 
 The TDSEZ binary writes the FULL transition-dipole matrices between every
-converged eigenstate into ``static/EigenData_<prefix>.h5`` as the datasets
+converged eigenstate into ``static/<name>_eigen.h5`` as the datasets
 
     tdm_x, tdm_y, tdm_z   (shape (N*N, 2), row-major [re, im] per element)
 
 where element ``[i*N + j]`` holds ⟨i|D_α|j⟩.  These are the complete Hermitian
 matrices at double/complex precision — the optimal machine-readable form (the
-legacy ``static/TDMInfo_<prefix>.txt`` is human-facing text and drops small /
+legacy ``static/<name>_tdm.txt`` is human-facing text and drops small /
 zero / diagonal entries, so it is unsuitable for programmatic use).
 
 This module complements the eigen reader
@@ -45,7 +45,7 @@ def read_tdm(path: Union[str, Path]) -> Dict[str, np.ndarray]:
     Parameters
     ----------
     path
-        Path to ``static/EigenData_<prefix>.h5`` (the same file that carries
+        Path to ``static/<name>_eigen.h5`` (the same file that carries
         ``spectrum`` / ``psi_*`` / ``run_metadata``).
 
     Returns

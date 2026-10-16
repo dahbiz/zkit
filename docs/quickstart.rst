@@ -13,10 +13,10 @@ TDSE-Z writes outputs under a single run directory with two subdirectories:
 
     run_dir/
       td/
-        TimeEvolutionData_<input>.h5
+        <name>_observables.h5
         wfs_<input>.h5
       static/
-        EigenData_<input>.h5
+        <name>_eigen.h5
 
 ``<input>`` is the input filename, for example ``h2p.inp``.
 
@@ -57,14 +57,14 @@ Plot a wavefunction snapshot
 
 .. code-block:: bash
 
-   zkit plot-wfs td/wfs_h2p.inp.h5 --step 0 --outdir figures
+   zkit plot-wfs td/h2p_wfs.h5 --step 0 --outdir figures
 
 .. code-block:: python
 
    from zkit.viz import plot_wavefunction
 
    path = plot_wavefunction(
-       "td/wfs_h2p.inp.h5",
+       "td/h2p_wfs.h5",
        step=0,
        outdir="figures",
        npoints=240,
@@ -77,14 +77,14 @@ Plot transition-dipole diagrams
 
 .. code-block:: bash
 
-   zkit tdm-plot static/EigenData_h2p.inp.h5 --axes x,z --outdir figures
+   zkit tdm-plot static/h2p_eigen.h5 --axes x,z --outdir figures
 
 .. code-block:: python
 
    from zkit.viz import plot_tdm
 
    out = plot_tdm(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outdir="figures",
        axes=["x", "z"],
        min_mu=1e-3,
@@ -101,7 +101,7 @@ Read time-evolution data
 
    from zkit.io.evolution import read_evolution
 
-   evolution = read_evolution("td/TimeEvolutionData_h2p.inp.h5")
+   evolution = read_evolution("td/h2p_observables.h5")
    print(evolution.time.shape)
    print(evolution.dipoles.shape)
    print(evolution.energies.shape)
@@ -115,12 +115,12 @@ Read eigenstates
    from zkit.io.eigen import read_eigen
    from zkit.io.tdm import tdm_of_state
 
-   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("static/h2p_eigen.h5")
    print(eigen.values.shape)
    print(eigen.vectors.shape)
 
    # transitions out of state 0 along x
-   row = tdm_of_state("static/EigenData_h2p.inp.h5", 0, axes="x")
+   row = tdm_of_state("static/h2p_eigen.h5", 0, axes="x")
    print(row["tdm_x"].shape)
 
 Reconstruct a spatial wavefunction
@@ -130,7 +130,7 @@ Reconstruct a spatial wavefunction
 
    from zkit.io.eigen import read_eigen
 
-   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("static/h2p_eigen.h5")
    res = eigen.reconstruct(istate=0, npoints=240)
    print(res["psi"].shape)
    print(res["axes"][0].min(), res["axes"][0].max())

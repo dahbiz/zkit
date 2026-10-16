@@ -1,4 +1,4 @@
-"""Read TimeEvolutionData_<inp>.h5 files."""
+"""Read <name>_observables.h5 files."""
 
 from __future__ import annotations
 

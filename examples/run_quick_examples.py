@@ -12,6 +12,7 @@ import numpy as np
 
 from zkit.io.eigen import read_eigen
 from zkit.io.evolution import read_evolution
+from zkit.paths import output_path
 
 CASES = {
     "1d": ("harmonic_oscillator_1d.inp", np.array([0.1, 0.3, 0.5]), 1),
@@ -196,7 +197,7 @@ def plot_rabi_comparison(output_dir: Path, output_path: Path) -> None:
         ("rabi-detuned", r"detuned: $E_0=0.05$, $\omega_d=0.16$", "tab:orange"),
     ):
         deck_name = CASES[case][0]
-        path = output_dir / case / "td" / f"TimeEvolutionData_{deck_name}.h5"
+        path = output_path(output_dir / case, deck_name, "observables")
         evolution = read_evolution(path)
         ax.plot(evolution.time, evolution.populations[:, 2], label=label, color=color)
     time = np.linspace(0.0, 100.0, 600)
@@ -305,7 +306,7 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
             f"stdout:\n{result.stdout[-2000:]}\nstderr:\n{result.stderr[-2000:]}"
         )
 
-    eigen_path = case_dir / "static" / f"EigenData_{deck.name}.h5"
+    eigen_path = output_path(case_dir, deck.name, "eigen")
     eigen = read_eigen(eigen_path)
     if eigen.dimension != dimension or (
         expected is not None and not np.allclose(eigen.values, expected, atol=2e-5)
@@ -335,7 +336,7 @@ def run_case(tdsez: Path, case: str, output_dir: Path) -> None:
         )
     elif case in {"rabi", "rabi-weak", "rabi-detuned"}:
         plot_rabi(
-            case_dir / "td" / f"TimeEvolutionData_{deck.name}.h5",
+            output_path(case_dir, deck.name, "observables"),
             case_dir / "rabi-populations-response.png",
             case_dir / "rabi-observables.csv",
         )

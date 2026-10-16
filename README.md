@@ -59,10 +59,10 @@ Install extras with, for example, `pip install -e ".[viz,validation]"`.
 ```bash
 zkit --run-dir RUN summary <input>     # summary of one run (spectrum, time series)
 zkit --run-dir RUN batch               # summary of every run in RUN/td/
-zkit plot-wfs RUN/td/wfs_<input>.h5    # wavefunction snapshot to PNG (--vtk for VTK)
-zkit tdm-plot RUN/static/EigenData_<input>.h5   # transition-dipole diagram and |mu_ij| map
+zkit plot-wfs RUN/td/<name>_wfs.h5    # wavefunction snapshot to PNG (--vtk for VTK)
+zkit tdm-plot RUN/static/<name>_eigen.h5   # transition-dipole diagram and |mu_ij| map
 zkit validate --np 8                   # validate a TDSE-Z build against exact solutions
-zkit pes RUN/td/surff_<input>.h5       # photoelectron spectrum dP/dE from t-SURFF
+zkit pes RUN/td/<name>_surff.h5       # photoelectron spectrum dP/dE from t-SURFF
 zkit --run-dir RUN compare-scid <input> --scid-detail D --scid-pes P --omega W --e0 E
                                        # one-to-one benchmark against SCID-TDSE
 ```
@@ -81,11 +81,11 @@ import zkit
 
 run = zkit.load("RUN", "h2p.inp")  # a TDSE-Z run directory and its input file
 E = run.spectrum.values  # bound-state energies (a.u.)
-t, D = run.time, run.dipoles  # time series of td/TimeEvolutionData_<input>.h5
+t, D = run.time, run.dipoles  # time series of td/<name>_observables.h5
 ph = run.physics  # carrier sign, fields E(t) from the input deck
 
 # B-spline basis of a run: the functions sum to one inside the domain
-d = zkit.open_eig("RUN/static/EigenData_h2p.inp.h5")
+d = zkit.open_eig("RUN/static/h2p_eigen.h5")
 p = int(d["meta"]["SplineDegree"])
 kv = zkit.reconstruct_knots(d["knots_x"], p)
 xs = np.linspace(kv[0], kv[-1], 201)[1:-1]

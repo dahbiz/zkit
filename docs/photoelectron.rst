@@ -1,7 +1,7 @@
 Photoelectron and harmonic spectra
 ==================================
 
-TDSE-Z writes t-SURFF amplitudes to ``td/surff_<input>.h5`` when ``TSurff = 1``
+TDSE-Z writes t-SURFF amplitudes to ``td/<name>_surff.h5`` when ``TSurff = 1``
 (see the TDSE-Z t-SURFF documentation). zkit reads them, puts them on a
 spherical (``|k|``, θ) grid, and reduces them to energy spectra, angular
 distributions and yields. It also reads SCID-TDSE tables, so that the two

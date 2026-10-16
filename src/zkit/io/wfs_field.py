@@ -2,7 +2,7 @@
 
 TDSE-Z stores the wavefunction as B-spline *coefficients* (the IGA degrees of
 freedom), not as values on a grid.  The time-dependent snapshots are written
-to ``td/wfs_<input>.h5`` with the PETSc HDF5 viewer::
+to ``td/<name>_wfs.h5`` with the PETSc HDF5 viewer::
 
     /wavefunction   (n_snap, n_x[, n_y[, n_z]], 2)   trailing axis = [Re, Im]
     /knots_x        (1-D) PetIGA compact knot vector of the x axis
@@ -49,12 +49,12 @@ def _reshape_static_coefficients(coeffs, nfuncs, state_name):
 
 
 def reconstruct_wfs(path, step=0, npoints=200, axes=None):
-    r"""Evaluate one wavefunction snapshot of ``td/wfs_<input>.h5`` on a grid.
+    r"""Evaluate one wavefunction snapshot of ``td/<name>_wfs.h5`` on a grid.
 
     Parameters
     ----------
     path : str or pathlib.Path
-        Path to ``td/wfs_<input>.h5``.
+        Path to ``td/<name>_wfs.h5``.
     step : int, optional
         Snapshot index along the leading (time) axis of ``wavefunction``.
     npoints : int, optional
@@ -267,7 +267,7 @@ def compute_wfs_norm(path, step=0, nq=5):
     Parameters
     ----------
     path : str or pathlib.Path
-        Path to ``td/wfs_<input>.h5``.
+        Path to ``td/<name>_wfs.h5``.
     step : int, optional
         Snapshot index.
     nq : int, optional
@@ -455,7 +455,7 @@ def reconstruct_static_wfs(path, istate=0, npoints=200, axes=None):
     Parameters
     ----------
     path : str or pathlib.Path
-        Path to ``static/EigenData_<input>.h5``.
+        Path to ``static/<name>_eigen.h5``.
     istate : int, optional
         Index of the eigenstate (the ``<i>`` in ``psi_<i>``).
     npoints : int, optional

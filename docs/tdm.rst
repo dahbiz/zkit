@@ -11,7 +11,7 @@ Read full TDM matrices
 
    from zkit.io.tdm import read_tdm
 
-   tdm = read_tdm("static/EigenData_h2p.inp.h5")
+   tdm = read_tdm("static/h2p_eigen.h5")
    print(tdm.keys())
    print(tdm["tdm_x"].shape)
    print(tdm["tdm_x"].dtype)
@@ -26,10 +26,10 @@ Extract transitions out of one state
 
    from zkit.io.tdm import tdm_of_state, tdm_magnitude_of_state
 
-   row = tdm_of_state("static/EigenData_h2p.inp.h5", 0, axes="x")
+   row = tdm_of_state("static/h2p_eigen.h5", 0, axes="x")
    print(row["tdm_x"].shape)
 
-   mag = tdm_magnitude_of_state("static/EigenData_h2p.inp.h5", 0, axes=["x", "z"])
+   mag = tdm_magnitude_of_state("static/h2p_eigen.h5", 0, axes=["x", "z"])
    print(mag.shape)
 
 Plot diagrams and heatmaps
@@ -40,7 +40,7 @@ Plot diagrams and heatmaps
    from zkit.viz import plot_tdm
 
    out = plot_tdm(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outdir="figures",
        axes=["x", "z"],
        min_mu=1e-3,
@@ -64,7 +64,7 @@ Oscillator strength coloring
    from zkit.viz.tdm import plot_transition_diagram
 
    plot_transition_diagram(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outfile="figures/h2p_f_diagram.png",
        axes="x",
        min_mu=1e-3,

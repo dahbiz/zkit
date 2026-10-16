@@ -36,6 +36,6 @@ cmp = compare_with_scid(
 text = cmp.report()
 (HERE / "metrics.txt").write_text(text + "\n")
 print(text)
-surff = HERE / "tdsez" / "td" / "surff_quick.inp.h5"
+surff = HERE / "tdsez" / "td" / "quick_surff.h5"
 for p in plot_comparison(cmp, HERE / "figures", surff, HERE / "scid" / "pes_volkov.table.gz"):
     print("wrote", p.relative_to(HERE))

@@ -1,6 +1,6 @@
 """zkit — post-processing toolkit for TDSEZ eigenstate HDF5 outputs.
 
-This package reads the EigenData_*.h5 / wfs_*.h5 files written by the TDSEZ
+This package reads the static/<name>_eigen.h5 / td/<name>_wfs.h5 files written by the TDSEZ
 binary and provides reconstruction + analytic-reference helpers used by the
 validation test-suite (tests/test_zkit.py).
 
@@ -56,11 +56,14 @@ from zkit.models import (
     TSSeries,
     WavefunctionSeries,
 )
+from zkit.paths import output_path, run_name
 from zkit.photoelectron import energy_spectrum, to_spherical
 from zkit.simulation import Run, load
 from zkit.viz import plot_tdm, plot_tdm_matrix, plot_transition_diagram, plot_wavefunction
 
 __all__ = [
+    "output_path",
+    "run_name",
     "to_spherical",
     "read_surff",
     "read_scid_pes",
@@ -218,8 +221,9 @@ def run(input_file, binary=None, nproc=4):
 
     if binary is None:
         binary = find_binary()
-    base = os.path.basename(input_file)
-    out_h5 = os.path.join("static", f"EigenData_{base}.h5")
+    from zkit.paths import output_path
+
+    out_h5 = str(output_path(".", input_file, "eigen"))
     cmd = ["mpirun", "-np", str(nproc), binary, "-inp", input_file]
     r = subprocess.run(cmd, capture_output=True)
     if r.returncode != 0:

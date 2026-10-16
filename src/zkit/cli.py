@@ -31,7 +31,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
     meta = sim.meta
     ev = sim.evolution
 
-    eigen_path = run_dir / "static" / f"EigenData_{base}.h5"
+    eigen_path = sim.path("eigen")
     eigen_text = "missing"
     if eigen_path.exists():
         try:
@@ -57,14 +57,15 @@ def cmd_batch(args: argparse.Namespace) -> int:
         print(f"No td directory found in {run_dir}", file=sys.stderr)
         return 1
 
-    files = sorted(td_dir.glob("TimeEvolutionData_*.h5"))
-    if not files:
-        print(f"No TimeEvolutionData_*.h5 files found in {td_dir}", file=sys.stderr)
+    from zkit.paths import list_runs
+
+    names = list_runs(run_dir)
+    if not names:
+        print(f"No <name>_observables.h5 files found in {td_dir}", file=sys.stderr)
         return 1
 
     rows = []
-    for path in files:
-        base = path.name[len("TimeEvolutionData_") : -len(".h5")]
+    for base in names:
         try:
             sim = Run(run_dir, base)
             ev = sim.evolution
@@ -72,7 +73,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
         except Exception as exc:  # pragma: no cover - CLI path only
             rows.append((base, "error", 0, str(exc)))
 
-    print("basename,dimension,steps,final_time")
+    print("name,dimension,steps,final_time")
     for base, dim, steps, final_time in rows:
         if isinstance(final_time, float):
             print(f"{base},{dim},{steps},{final_time}")
@@ -100,18 +101,16 @@ def cmd_plot(args: argparse.Namespace) -> int:
 
 def cmd_tdm_plot(args: argparse.Namespace) -> int:
     eig = Path(args.eig_file)
-    # Accept either the EigenData_<base>.h5 directly, or a run-dir + basename.
+    # Accept either the static/<name>_eigen.h5 file, or a run-dir + input name.
     if eig.is_file():
         eig_path = eig
     else:
-        run_dir = Path(args.run_dir)
-        cand = run_dir / "static" / f"EigenData_{eig.name}.h5"
-        if not cand.exists():
-            cand = run_dir / "static" / f"EigenData_{eig}.h5"
-        if not cand.exists():
-            print(f"EigenData HDF5 not found for {args.eig_file}", file=sys.stderr)
+        from zkit.paths import output_path
+
+        eig_path = output_path(args.run_dir, eig, "eigen")
+        if not eig_path.exists():
+            print(f"static/<name>_eigen.h5 not found for {args.eig_file}", file=sys.stderr)
             return 1
-        eig_path = cand
     axes = None
     if args.axes:
         axes = [a.strip() for a in args.axes.split(",") if a.strip()]
@@ -208,7 +207,7 @@ def cmd_compare_scid(args: argparse.Namespace) -> int:
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     (outdir / f"{args.prefix}_metrics.txt").write_text(text + "\n")
-    surff = Path(args.run_dir) / "td" / f"surff_{Path(args.basename).name}.h5"
+    surff = Run(args.run_dir, args.basename).path("surff")
     for p in plot_comparison(cmp, outdir, surff, args.scid_pes, args.prefix, args.dpi):
         print(f"wrote {p}")
     return 0
@@ -223,10 +222,10 @@ def main(argv: list[str] | None = None) -> int:
     p_summary = subparsers.add_parser("summary", help="Summarize one simulation")
     p_summary.add_argument("basename", help="Input basename such as h2p.inp")
 
-    subparsers.add_parser("batch", help="Summarize all TimeEvolutionData files in td/")
+    subparsers.add_parser("batch", help="Summarize every run with a time series in td/")
 
     p_plot = subparsers.add_parser("plot-wfs", help="Plot a wavefunction snapshot to PNG")
-    p_plot.add_argument("wfs_file", help="Path to td/wfs_<input>.h5")
+    p_plot.add_argument("wfs_file", help="Path to td/<name>_wfs.h5")
     p_plot.add_argument("--step", type=int, default=0, help="Snapshot index")
     p_plot.add_argument("--outdir", default=".", help="Output directory")
     p_plot.add_argument("--npoints", type=int, default=200, help="Grid points per axis")
@@ -245,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         "tdm-plot", help="Plot transition-dipole diagram + |mu_ij| heatmap from EigenData HDF5"
     )
     p_tdm.add_argument(
-        "eig_file", help="EigenData_<base>.h5 path, or just the basename when used with --run-dir"
+        "eig_file", help="static/<name>_eigen.h5 path, or the input name when used with --run-dir"
     )
     p_tdm.add_argument(
         "--run-dir",
@@ -282,7 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     p_pes = subparsers.add_parser(
         "pes", help="dP/dE from a t-SURFF file (optionally against a SCID-TDSE table)"
     )
-    p_pes.add_argument("surff_file", help="Path to td/surff_<input>.h5 (grid mode)")
+    p_pes.add_argument("surff_file", help="Path to td/<name>_surff.h5 (grid mode)")
     p_pes.add_argument("--scid", default=None, help="SCID-TDSE sts_volkov/coulomb table")
     p_pes.add_argument("--nk", type=int, default=300, help="|k| points (without --scid)")
     p_pes.add_argument("--ntheta", type=int, default=90, help="theta points (without --scid)")

@@ -12,7 +12,7 @@ Wavefunction plots
    from zkit.viz import plot_wavefunction
 
    path = plot_wavefunction(
-       "td/wfs_h2p.inp.h5",
+       "td/h2p_wfs.h5",
        step=0,
        outdir="figures",
        npoints=240,
@@ -36,7 +36,7 @@ Transition-dipole diagrams
    from zkit.viz import plot_transition_diagram
 
    plot_transition_diagram(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outfile="figures/tdm_diagram.png",
        axes="x",
        min_mu=1e-3,
@@ -49,7 +49,7 @@ Transition-dipole diagrams
    from zkit.viz.tdm import plot_tdm_matrix
 
    plot_tdm_matrix(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outfile="figures/tdm_matrix.png",
        axes=["x", "z"],
        dpi=150,
@@ -60,7 +60,7 @@ Transition-dipole diagrams
    from zkit.viz import plot_tdm
 
    out = plot_tdm(
-       "static/EigenData_h2p.inp.h5",
+       "static/h2p_eigen.h5",
        outdir="figures",
        axes=["x", "z"],
        min_mu=1e-3,
@@ -82,5 +82,5 @@ Batch plotting
    out_dir = run_dir / "figures"
    out_dir.mkdir(exist_ok=True)
 
-   for path in sorted(td_dir.glob("wfs_*.h5")):
+   for path in sorted(td_dir.glob("*_wfs.h5")):
        plot_wavefunction(path, step=0, outdir=out_dir, npoints=200, dpi=150)

@@ -121,7 +121,7 @@ def compare_with_scid(
     scid = read_scid_pes(scid_pes)
     k, theta = scid.k, scid.theta
     dens = {
-        "TDSE-Z": to_spherical(read_surff(run.td_dir / f"surff_{run.base}.h5"), k, theta),
+        "TDSE-Z": to_spherical(read_surff(run.path("surff")), k, theta),
         "SCID-TDSE": scid.density.mean(axis=2),
     }
     energy = k**2 / 2

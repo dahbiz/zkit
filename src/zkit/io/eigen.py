@@ -1,4 +1,4 @@
-"""Read static/EigenData_<inp>.h5 files."""
+"""Read static/<name>_eigen.h5 files."""
 
 from __future__ import annotations
 

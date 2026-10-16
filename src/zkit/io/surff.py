@@ -1,4 +1,4 @@
-"""Read td/surff_<inp>.h5 files (t-SURFF photoelectron spectra)."""
+"""Read td/<name>_surff.h5 files (t-SURFF photoelectron spectra)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def read_surff(path: Union[str, Path]) -> SurffSpectrum:
     Parameters
     ----------
     path:
-        Path to ``td/surff_<input>.h5``.
+        Path to ``td/<name>_surff.h5``.
 
     Returns
     -------

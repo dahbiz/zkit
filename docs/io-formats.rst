@@ -4,7 +4,7 @@ Input and output formats
 This page documents the exact HDF5 layouts produced by TDSE-Z and consumed by
 zkit.
 
-``static/EigenData_<input>.h5``
+``static/<name>_eigen.h5``
 -------------------------------
 
 Created by ``TDSEZCore::Output()``.
@@ -41,7 +41,7 @@ Reader:
 
    from zkit.io.eigen import read_eigen
 
-   eigen = read_eigen("static/EigenData_h2p.inp.h5")
+   eigen = read_eigen("static/h2p_eigen.h5")
    print(eigen.values)
    print(eigen.vectors.shape)
    print(eigen.dimension)
@@ -52,7 +52,7 @@ Dimension is inferred from:
 2. number of ``/knots_*`` datasets
 3. dipole column width in time-evolution files
 
-``td/TimeEvolutionData_<input>.h5``
+``td/<name>_observables.h5``
 -----------------------------------
 
 Created by ``TDSEZManager::WriteHDF5()``.
@@ -103,7 +103,7 @@ Reader:
 
    from zkit.io.evolution import read_evolution
 
-   evolution = read_evolution("td/TimeEvolutionData_h2p.inp.h5")
+   evolution = read_evolution("td/h2p_observables.h5")
    print(evolution.dimension)
    print(evolution.time.shape)
    print(evolution.dipoles.shape)
@@ -111,7 +111,7 @@ Reader:
    print(evolution.currents.shape)
    print(evolution.autocorrelation.shape)
 
-``td/wfs_<input>.h5``
+``td/<name>_wfs.h5``
 ---------------------
 
 Created by the TS monitor via a collective ``VecView`` into an HDF5 viewer.
@@ -128,12 +128,12 @@ Reader:
 
    from zkit.io.wavefunction import read_wfs
 
-   wfs = read_wfs("td/wfs_h2p.inp.h5")
+   wfs = read_wfs("td/h2p_wfs.h5")
    print(wfs.n_snapshots)
    print(wfs.data.shape)
 
-``ts_<input>.h5``
------------------
+``td/<name>_ts.h5``
+-------------------
 
 Created by ``TSView``.
 
@@ -147,7 +147,7 @@ Reader:
 
    from zkit.io.ts import read_timeseries
 
-   ts = read_timeseries("ts_h2p.inp.h5")
+   ts = read_timeseries("td/h2p_ts.h5")
    print(ts.times)
 
 TDM outputs
@@ -155,9 +155,9 @@ TDM outputs
 
 TDSE-Z emits:
 
-- ``static/TDM_Dx_<stem>.npy``
-- ``static/EigenEnergies_<stem>.npy``
-- ``static/States_<stem>.npy``
+- ``static/<name>_tdm_Dx.npy``
+- ``static/<name>_energies.npy``
+- ``static/<name>_states.npy``
 
 Reader:
 
@@ -165,5 +165,5 @@ Reader:
 
    from zkit.io.tdm import read_tdm
 
-   tdm = read_tdm("static/EigenData_h2p.inp.h5")
+   tdm = read_tdm("static/h2p_eigen.h5")
    print(tdm.keys())

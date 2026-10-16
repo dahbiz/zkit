@@ -110,7 +110,7 @@ class EigenData:
         if self._path is None:
             raise RuntimeError(
                 "EigenData._path is not set; reconstruct() needs the source "
-                "EigenData_*.h5 path. Read it with zkit.read_eigen(path) first."
+                "static/<name>_eigen.h5 path. Read it with zkit.read_eigen(path) first."
             )
         from zkit.io.wfs_field import reconstruct_static_wfs
 
@@ -158,7 +158,7 @@ class TSSeries:
 
 @dataclass(frozen=True)
 class SurffSpectrum:
-    """t-SURFF photoelectron amplitudes written by TDSE-Z (``td/surff_<inp>.h5``)."""
+    """t-SURFF photoelectron amplitudes written by TDSE-Z (``td/<name>_surff.h5``)."""
 
     momenta: np.ndarray  # (n_k, dim) canonical momenta k
     amplitude: np.ndarray  # (n_k,) complex b(k), end term included when present
