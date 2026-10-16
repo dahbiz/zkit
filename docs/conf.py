@@ -47,6 +47,7 @@ html_theme_options = {
     "collapse_navigation": True,
     "navigation_with_keys": False,
     "logo_only": True,
+    "style_nav_header_background": "#ffffff",
 }
 html_logo = "_static/logo.png"
 html_favicon = "_static/logo.png"

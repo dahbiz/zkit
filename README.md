@@ -129,17 +129,21 @@ those of the TDSE-Z input deck.
 
 ## License and acknowledgements
 
-BSD 2-Clause, see [LICENSE](LICENSE). Author: Zakaria Dahbi (King's College
-London), zdahbi@outlook.es.
+BSD 2-Clause, see [LICENSE](LICENSE).
 
 `zkit` includes a pure-Python implementation of the `igakit.igalib.bsp`
 B-spline evaluator interface for wavefunction reconstruction; the upstream
 BSD license is in `src/igakit/LICENSE.rst`.
 
-## Funding
+<p align="center">
+  <strong>Zakaria Dahbi</strong><br>
+  King's College London · zdahbi@outlook.es
+</p>
 
-Z.D. acknowledges funding from UK Research and Innovation (UKRI) under the UK
-government's Horizon Europe funding guarantee (Grant No. EP/Z000807/1).
+<p align="center">
+  Z.D. acknowledges funding from UK Research and Innovation (UKRI) under the UK
+  government's Horizon Europe funding guarantee (Grant No. EP/Z000807/1).
+</p>
 
 <p align="center">
   <img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/UKRI_EPSR_Council-Logo_Horiz-RGB.png" alt="UKRI Engineering and Physical Sciences Research Council" width="220" />
