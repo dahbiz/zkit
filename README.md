@@ -25,9 +25,6 @@ distributions, and validates the solver against exact solutions.
 
 **Documentation:** https://dahbiz.github.io/zkit/
 
-> **Status:** beta (0.1.0b1). The HDF5 formats written by TDSE-Z are the stable
-> interface; the Python API may still change between beta releases.
-
 ## Installation
 
 `zkit` needs Python 3.10 or newer, `numpy` and `h5py`.
