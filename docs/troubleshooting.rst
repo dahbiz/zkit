@@ -48,7 +48,7 @@ This installs ``torch``.
 Wavefunction reconstruction raises about missing ``knots_*``
 ------------------------------------------------------------
 
-Re-run TDSEZ with the current binary. Older flat ``wfs_*.h5`` files do not
+Re-run TDSE-Z with the current binary. Older flat ``wfs_*.h5`` files do not
 embed the knot vectors and are not supported by the current reconstruction
 path.
 

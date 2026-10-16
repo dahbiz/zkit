@@ -1,7 +1,7 @@
 Physics outputs
 ===============
 
-TDSEZ's time monitor can emit dipole, energy, population, current, and
+TDSE-Z's time monitor can emit dipole, energy, population, current, and
 autocorrelation observables. zkit reads them directly from the time-evolution
 HDF5 file.
 

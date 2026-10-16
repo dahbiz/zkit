@@ -2,7 +2,7 @@ Wigner and phase-space analysis
 ================================
 
 The ``zkit.mwigner`` subpackage provides marginal Wigner transforms, phase-space
-currents, covariance analysis, and autocorrelation tools for TDSEZ outputs.
+currents, covariance analysis, and autocorrelation tools for TDSE-Z outputs.
 
 .. warning::
 

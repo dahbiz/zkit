@@ -46,12 +46,13 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "collapse_navigation": True,
     "navigation_with_keys": False,
+    "logo_only": True,
 }
+html_logo = "_static/logo.png"
+html_favicon = "_static/logo.png"
+html_title = "zkit documentation"
 html_static_path = ["_static"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-# Several scientific API docstrings use compact formula layouts that docutils
-# reports as markup warnings even though Sphinx renders their content correctly.
-suppress_warnings = ["docutils"]
 html_show_sourcemap = False
 html_show_sphinx = False
 html_show_copyright = True
@@ -70,8 +71,11 @@ mathjax3_config = {
 
 
 def _normalize_docstring(app, what, name, obj, options, lines):
-    """Keep scientific notation from being parsed as reStructuredText markup."""
-    lines[:] = [line.lstrip().replace("|", r"\|") for line in lines]
+    """Keep |psi|^2-style notation from being parsed as substitution references.
+
+    Runs after napoleon (priority 1000), so the indentation of the generated
+    field lists must be preserved."""
+    lines[:] = [line.replace("|", r"\|") for line in lines]
 
 
 def setup(app):

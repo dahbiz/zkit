@@ -1,48 +1,27 @@
-"""
-zkit.mwigner.covariance — phase-space covariance analysis of the 2D
-electron wavefunction, integrated into zkit.
+r"""Phase-space covariance diagnostics of 2D wavefunctions.
 
-This module implements ONLY the technically-sound parts of a proposed
-"high-dimensional entanglement" extension.  Deliberately EXCLUDED:
-  * the "Symplectic Principal Component (SPC) qubit" — a single linear
-    quadrature Q = v . R is a continuous variable, NOT a two-level
-    system; projecting a CV state onto Q>0 / Q<0 does not define a
-    qubit, and the proposed orthogonal rotation is not a symplectic
-    (canonical) transformation, so the slice-FFT recipe is not a valid
-    coordinate change.  The correct CV diagnostic is the symplectic
-    spectrum of the covariance matrix below.
-  * any "qubit / ququart capacity limit" comparison — the von Neumann
-    entropy of a *continuous-variable* reduced state has no d-level
-    bound; such a limit applies only to discrete-d systems.
+For a wavefunction :math:`\psi(x, y)` on a uniform grid this module computes
+the :math:`4\times4` covariance matrix of :math:`R = (x, p_x, y, p_y)`, its
+symplectic eigenvalues, the purity of the Gaussian state with the same
+covariance, its principal components, and the Schmidt spectrum of the reduced
+density matrix :math:`\rho(x, x')` obtained by tracing over :math:`y`.
 
-Provided
---------
-compute_4d_covariance(psi_2d, dx, dy) -> Sigma (4x4, ordered x,px,y,py)
-symplectic_eigenvalues(Sigma)        -> symplectic spectrum (>= 1/2 for
-                                         a physically-allowed state; = 1/2
-                                         iff the (4D) state is pure)
-effective_schmidt_rank(eigenvalues)  -> N_eff = 1 / sum(lambda_i^2)
-schmidt_spectrum(rho_or_eigs)        -> the reduced-state Schmidt
-                                         eigenvalues (for plotting)
+Momentum moments use spectral (FFT) derivatives,
 
-All momentum expectation values use the SPECTRAL (FFT) derivative method
-    <p_x>   = -i ∫ Ψ* ∂_x Ψ dx dy
-    <p_x^2> = -∫ Ψ* ∂_x^2 Ψ dx dy
-which is exact to machine precision on a uniform grid for the band-limited
-(Gaussian-decaying) states encountered here, in contrast to the O(dx^2)
-central-difference error of a finite-difference gradient.  The covariance
-matrix therefore matches its closed-form analytic value to ~1e-14
-regardless of grid spacing.
+.. math::
 
-NOTE (spatially-varying mass): the TDSEZ wavefunctions consumed here are
-already propagated with the mass-corrected kinetic operator
-    T = -∫ ε(x,y) ∇B_j · ∇B_i  dx dy ,   ε(x,y) = m(x,y) = 1 - 0.84 exp(-...)
-(poisson_bsp.cpp).  The stored ψ(r) is therefore the physical wavefunction
-in the m(x,y) geometry, and the flat -i∇ momentum operator used below is
-the appropriate one for that stored field -- no separate mass correction
-is applied or required.  (An earlier caveat warning of a flat-mass
-approximation in the dot core is withdrawn: the mass physics is already
-contained in the wfs.)
+   \langle p_x\rangle = -i \int \psi^* \partial_x \psi \, dx\,dy, \qquad
+   \langle p_x^2\rangle = -\int \psi^* \partial_x^2 \psi \, dx\,dy,
+
+which are exact to round-off for states that decay to zero at the grid
+boundary. Atomic units, :math:`\hbar = 1`. The moments use the flat momentum
+operator :math:`-i\nabla`; for a position-dependent mass this is the canonical
+momentum, not :math:`m\,v`.
+
+The symplectic eigenvalues :math:`\nu_k` of a continuous-variable state
+satisfy :math:`\nu_k \ge 1/2`, with equality for all :math:`k` exactly for a
+pure Gaussian state. A projection of the state onto a single quadrature is a
+continuous variable and is not used as a two-level system here.
 """
 
 import numpy as np
@@ -71,21 +50,36 @@ def _spectral_derivs(psi, dx, dy):
 
 
 def compute_4d_covariance(psi_2d: np.ndarray, dx: float, dy: float) -> np.ndarray:
-    """4x4 covariance matrix of R = (x, p_x, y, p_y).
+    r"""Covariance matrix of :math:`R = (x, p_x, y, p_y)` for a 2D wavefunction.
 
-    Ordered [x, p_x, y, p_y].  Built from the wavefunction normalised to
-    unit 2D probability.  Momentum moments use the GRADIENT method
-    (p_x = -i ∂_x, p_x^2 = -∂_x^2), avoiding FFT phase/origin artifacts.
+    The wavefunction is normalised to unit probability on the grid. The grid
+    coordinates are centred: :math:`x_i = (i - (n_x - 1)/2)\,\Delta x`, likewise
+    for :math:`y`. The matrix is the symmetrised, centred covariance
 
-    The covariance is the centred, symmetrised matrix
-        Sigma_ij = 1/2 <{R_i, R_j}> - <R_i> <R_j> ,
-    with R = (x, p_x, y, p_y).  For a pure 2D Gaussian this gives
-    symplectic eigenvalues nu = 1/2 exactly; mixed/delocalised states
-    have nu > 1/2 (never < 1/2, by the uncertainty principle).
+    .. math::
+
+       \Sigma_{ij} = \tfrac12 \langle \{R_i, R_j\} \rangle
+                     - \langle R_i \rangle \langle R_j \rangle ,
+
+    with momentum moments from spectral (FFT) derivatives. A pure Gaussian state
+    gives symplectic eigenvalues :math:`\nu = 1/2`.
+
+    Parameters
+    ----------
+    psi_2d : numpy.ndarray
+        Complex wavefunction on a uniform :math:`(n_x, n_y)` grid.
+    dx, dy : float
+        Grid spacings (a.u.).
 
     Returns
     -------
-    Sigma : (4, 4) real symmetric covariance matrix.
+    numpy.ndarray
+        Real symmetric :math:`4\times4` matrix ordered :math:`(x, p_x, y, p_y)`.
+
+    Raises
+    ------
+    ValueError
+        If the wavefunction has zero norm.
     """
     psi = np.asarray(psi_2d, dtype=np.complex128)
     norm = np.sum(np.abs(psi) ** 2) * dx * dy
@@ -150,19 +144,25 @@ def compute_4d_covariance(psi_2d: np.ndarray, dx: float, dy: float) -> np.ndarra
 
 
 def symplectic_eigenvalues(Sigma: np.ndarray) -> np.ndarray:
-    """Symplectic eigenvalues ν_k of the 4x4 covariance matrix.
+    r"""Symplectic eigenvalues :math:`\nu_k` of a covariance matrix.
 
-    For a 4D phase space they come in pairs; a physically-allowed state
-    has ν_k >= 1/2 (in ħ=1 units), and ν_k = 1/2 for ALL k iff the state
-    is pure.  Mixedness / entanglement with the traced-out mode shows up
-    as ν_k > 1/2.  This is the rigorous continuous-variable diagnostic
-    (replacing the invalid "SPC qubit" construction).
+    The covariance is ordered :math:`(q_1, p_1, q_2, p_2, \ldots)`, and the
+    symplectic form pairs each coordinate with its conjugate momentum (a
+    :math:`2\times2` block :math:`[[0, 1], [-1, 0]]` per pair). The
+    :math:`\nu_k` are the moduli of the eigenvalues :math:`\pm i\nu_k` of
+    :math:`J\Sigma`. A physical state has :math:`\nu_k \ge 1/2` (:math:`\hbar = 1`);
+    :math:`\nu_k = 1/2` for all :math:`k` exactly for a pure Gaussian state.
 
-    Sigma is ordered [x, p_x, y, p_y]; the symplectic form must pair
-    (x, p_x) and (y, p_y), i.e. it is block-diagonal with a 2x2
-    [[0, 1], [-1, 0]] block on each pair (NOT the [[0,I],[-I,0]] block
-    form, which would pair the two coordinates instead of coordinate with
-    its conjugate momentum).
+    Parameters
+    ----------
+    Sigma : numpy.ndarray
+        Real :math:`2n\times 2n` covariance matrix.
+
+    Returns
+    -------
+    numpy.ndarray
+        The :math:`2n` values :math:`\lvert\operatorname{Im}\lambda\rvert`, sorted
+        in descending order (each :math:`\nu_k` appears twice).
     """
     Sigma = np.asarray(Sigma, dtype=np.float64)
     n = Sigma.shape[0] // 2
@@ -179,14 +179,22 @@ def symplectic_eigenvalues(Sigma: np.ndarray) -> np.ndarray:
 
 
 def effective_schmidt_rank(eigenvalues: np.ndarray) -> float:
-    """Effective Schmidt rank N_eff = 1 / Σ λ_i^2 from the Schmidt
-    eigenvalues λ_i of the reduced density matrix ρ(x,x').
+    r"""Effective Schmidt rank :math:`N_{\mathrm{eff}} = 1 / \sum_i \lambda_i^2`.
 
-    NOTE: N_eff and the von Neumann entropy S_VN = -Σ λ_i ln λ_i are BOTH
-    functions of the SAME Schmidt spectrum; they are not independent
-    proofs.  N_eff is reported as a complementary, intuitive measure of
-    multi-modality (e.g. N_eff ≈ 9 means the reduced state spans ~9
-    effective modes), not as separate evidence.
+    :math:`\lambda_i` are the Schmidt eigenvalues of the reduced density matrix
+    (:func:`schmidt_spectrum`); values below :math:`10^{-12}` are ignored.
+    :math:`N_{\mathrm{eff}}` and the von Neumann entropy are functions of the
+    same spectrum and carry the same information.
+
+    Parameters
+    ----------
+    eigenvalues : array_like
+        Schmidt eigenvalues.
+
+    Returns
+    -------
+    float
+        :math:`N_{\mathrm{eff}}`, or 0 when no eigenvalue exceeds :math:`10^{-12}`.
     """
     ev = np.asarray(eigenvalues, dtype=np.float64)
     ev = ev[ev > 1e-12]
@@ -196,9 +204,27 @@ def effective_schmidt_rank(eigenvalues: np.ndarray) -> float:
 
 
 def schmidt_spectrum(rho_or_eigs, dx: float = None) -> np.ndarray:
-    """Return the Schmidt eigenvalues λ_i of the reduced density matrix
-    ρ(x,x') (tracing over y).  Accepts either the full rho (dx required to
-    normalise the trace) or pre-computed eigenvalues.
+    r"""Schmidt eigenvalues of the reduced density matrix :math:`\rho(x, x')`.
+
+    Parameters
+    ----------
+    rho_or_eigs : numpy.ndarray
+        Either the reduced density matrix on the :math:`x` grid (2D array) or
+        precomputed eigenvalues (1D array).
+    dx : float, optional
+        Grid spacing; required when a density matrix is passed (it is
+        normalised to unit trace with the quadrature weight ``dx``).
+
+    Returns
+    -------
+    numpy.ndarray
+        Eigenvalues above :math:`10^{-12}`, in descending order (empty for a
+        non-positive trace).
+
+    Raises
+    ------
+    ValueError
+        If a density matrix is passed without ``dx``.
     """
     import numpy as np
 
@@ -217,52 +243,52 @@ def schmidt_spectrum(rho_or_eigs, dx: float = None) -> np.ndarray:
 
 
 def gaussian_purity(symplectic_eigs: np.ndarray) -> float:
-    """Purity of the BEST-FIT GAUSSIAN state, from its symplectic
-    eigenvalues ν_k.
+    r"""Purity of the Gaussian state with a given covariance matrix.
 
-    For an n-mode Gaussian state (here n = 2) the Gaussian purity is
+    For an :math:`n`-mode Gaussian state
 
-        μ_G = 1 / ∏_{k=1}^{n} (2 ν_k) .
+    .. math::
 
-    A pure Gaussian has ν_k = 1/2 for all k, giving μ_G = 1.  Any
-    physically-allowed state has μ_G ∈ (0, 1].
+       \mu_G = \prod_{k=1}^{n} \frac{1}{2\nu_k} ,
 
-    IMPORTANT: μ_G is the purity of the *Gaussian state with the same
-    covariance matrix*, NOT the purity of the true (possibly
-    non-Gaussian) state.  To test for non-Gaussian structure compare
-    μ_G against the TRUE purity μ_true = Tr ρ² (from the wavefunction);
-    μ_true < μ_G indicates the real state is "more mixed" than its
-    Gaussian fit — i.e. contains non-Gaussian features (Fock/cat/
-    higher-order correlations).  CAUTION: for the strongly ionised
-    snapshots the symplectic eigenvalues become huge (the electron is
-    delocalised over hundreds of a.u.), so μ_G underflows toward 0 and
-    the comparison μ_true > μ_G is an artefact of the underflow, not a
-    sign of Gaussianity.  The diagnostic is meaningful in the
-    near-pure / moderately-mixed regime (early snapshots), not at
-    extreme delocalisation.
+    which is 1 for a pure Gaussian state. :math:`\mu_G` is the purity of the
+    Gaussian state with the same covariance, not of the actual state: a true
+    purity :math:`\operatorname{Tr}\rho^2 < \mu_G` indicates non-Gaussian
+    structure. For strongly delocalised states :math:`\nu_k \gg 1` and
+    :math:`\mu_G` underflows towards 0, where the comparison is not meaningful.
+
+    Parameters
+    ----------
+    symplectic_eigs : array_like
+        Symplectic eigenvalues :math:`\nu_k` (each counted once per entry given).
+
+    Returns
+    -------
+    float
+        :math:`1 / \prod (2\nu_k)` over the entries given.
     """
     nu = np.asarray(symplectic_eigs, dtype=np.float64)
     return 1.0 / np.prod(2.0 * nu)
 
 
 def principal_components(Sigma: np.ndarray) -> tuple:
-    """Standard eigendecomposition of the covariance matrix Σ.
+    """Ordinary eigendecomposition of a covariance matrix.
 
-    Returns (eigvals, eigvecs) with eigvals descending.  These are the
-    *ordinary* (not symplectic) eigenvalues and eigenvectors of Σ: the
-    variances along the uncorrelated normal modes of the phase-space
-    distribution, and the linear combinations of (x, p_x, y, p_y) that
-    realise them.  This is the legitimate "true independent modes"
-    diagnostic — it shows whether the dominant spread is along a pure
-    axis (e.g. purely x) or a rotated mixture (e.g. 0.8 x + 0.6 p_y),
-    evidencing continuous-variable (not separable spatial) structure.
+    The eigenvalues are the variances along the uncorrelated directions of the
+    phase-space distribution, and the eigenvectors the corresponding linear
+    combinations of :math:`(x, p_x, y, p_y)`. These are not symplectic
+    eigenvalues and do not define a two-level system.
 
-    NOTE: this is NOT the "symplectic principal component qubit".  A
-    principal component of Σ is a direction of large variance in phase
-    space; it is a continuous variable, not a two-level system, and must
-    not be interpreted as a qubit.  The dominant eigenvector is reported
-    only as a descriptive statistic of where the wavepacket's spread
-    lives.
+    Parameters
+    ----------
+    Sigma : numpy.ndarray
+        Real symmetric covariance matrix.
+
+    Returns
+    -------
+    tuple of numpy.ndarray
+        ``(eigvals, eigvecs)`` with eigenvalues in descending order and the
+        eigenvectors as columns.
     """
     Sigma = np.asarray(Sigma, dtype=np.float64)
     evals, evecs = np.linalg.eigh(Sigma)
@@ -273,20 +299,29 @@ def principal_components(Sigma: np.ndarray) -> tuple:
 def covariance_diagnostics(
     psi_2d: np.ndarray, dx: float, dy: float, rho: np.ndarray = None
 ) -> dict:
-    """One-call bundle of the physically-sound covariance diagnostics for
-    a single 2D wavefunction snapshot.
+    r"""Covariance diagnostics of one 2D wavefunction snapshot.
 
-    Returns a dict with:
-      Sigma    : 4x4 covariance matrix [x, p_x, y, p_y]
-      diag     : variances {Sxx, Syy, Spxpx, Spyy}
-      offdiag  : key covariances {Sxpx, Sypy, Sxy, Spxpy, xpy, ypx}
-      nu       : symplectic eigenvalues (Williamson)
-      mu_G     : Gaussian-fit purity (gaussian_purity)
-      mu_true  : true purity Tr rho^2 (from reduced x-density matrix)
-      non_gaussian : mu_true < mu_G (None if mu_G underflowed)
-      pc_evals : principal-component eigenvalues of Sigma (desc)
-      pc_evecs : principal-component eigenvectors (columns)
-    All physics is read from the wavefunction; nothing is hard-coded.
+    Parameters
+    ----------
+    psi_2d : numpy.ndarray
+        Complex wavefunction on a uniform grid.
+    dx, dy : float
+        Grid spacings (a.u.).
+    rho : numpy.ndarray, optional
+        Reduced density matrix :math:`\rho(x, x')`; computed from ``psi_2d`` as
+        :math:`\sum_y \psi(x, y)\,\psi^*(x', y)\,\Delta x` when not given.
+
+    Returns
+    -------
+    dict
+        ``Sigma``: :math:`4\times4` covariance matrix (:func:`compute_4d_covariance`);
+        ``diag``: variances ``Sxx``, ``Spxpx``, ``Syy``, ``Spypy``;
+        ``offdiag``: covariances ``Sxpx``, ``Sypy``, ``Sxy``, ``Spxpy``, ``xpy``,
+        ``ypx``; ``nu``: symplectic eigenvalues; ``mu_G``: Gaussian purity;
+        ``mu_true``: :math:`\sum_i \lambda_i^2` of the Schmidt spectrum;
+        ``non_gaussian``: ``mu_true < mu_G``, or ``None`` when
+        :math:`\mu_G \le 10^{-6}`; ``pc_evals`` and ``pc_evecs``: principal
+        components of ``Sigma``.
     """
     Sigma = compute_4d_covariance(psi_2d, dx, dy)
     labels = ["x", "px", "y", "py"]

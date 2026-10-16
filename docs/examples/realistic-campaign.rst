@@ -1,14 +1,14 @@
 Realistic post-processing campaign
 ===================================
 
-This example follows a complete TDSEZ analysis workflow for a 1D
+This example follows a complete TDSE-Z analysis workflow for a 1D
 hydrogen-like run. The same pattern applies to 2D and 3D with minor
 dimension-dependent adjustments.
 
 Run setup
 ---------
 
-Assume the TDSEZ binary produced:
+Assume the TDSE-Z binary produced:
 
 ::
 

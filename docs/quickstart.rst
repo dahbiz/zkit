@@ -1,13 +1,13 @@
 Quickstart
 ==========
 
-This page is the fastest path from a fresh TDSEZ run to a plotted spectrum,
+This page is the fastest path from a fresh TDSE-Z run to a plotted spectrum,
 wavefunction, or transition-dipole diagram.
 
 Prepare a run directory
 ------------------------
 
-TDSEZ writes outputs under a single run directory with two subdirectories:
+TDSE-Z writes outputs under a single run directory with two subdirectories:
 
 ::
 

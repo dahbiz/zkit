@@ -1,27 +1,27 @@
-"""
-zkit.mwigner.analysis — deck-driven analysis of the marginal-Wigner
-phase-space current for a TDSEZ run.
+r"""Campaign driver for the marginal-Wigner analysis of TDSE-Z runs.
 
-All physics (potential V, mass, laser A(t), snapshot times, PDM
-derivatives) is read AUTOMATICALY from the TDSEZ input deck
-through :class:`zkit.physics.Physics` and :class:`zkit.simulation.Run`.
-Nothing is hard-coded.
+The functions read the physics (potential, mass, field, snapshot times) from
+the TDSE-Z input deck through :class:`zkit.physics.Physics` and
+:class:`zkit.simulation.Run`, and the wavefunction snapshots from
+``td/wfs_<input>.h5``. They write CSV tables and figures with fixed file
+names (``znse_*``) into the working or run directory; the default deck and
+wavefunction file names are those of the ZnSe quantum-dot campaign this module
+was written for.
 
-Functions
----------
-analyze_run(deck, wfs, run_dir=".")  -> writes znse_current.csv + figures
-animate_run(deck, wfs, run_dir=".")  -> writes mp4 + gif movie
+The momentum current is
 
-CLI
----
-    python -m zkit.mwigner.analysis  <deck.inp>  <wfs.h5>
+.. math::
 
-defaults (if omitted) point at the ZnSe 20 nm dot run.
+   J_p = -V'(x)\,W - A_x(t)\,W + Q(x, p),
 
-The p-current is
-    J_p = -V'(x) W  -  A_x(t) W  +  Q(x,p)
-with the classical confining force, the velocity-gauge laser drift
--A_x(t)W (read from the deck), and the Moyal quantum force Q.
+with the confining force, the field term of the vector potential read from the
+deck, and the Moyal quantum force :math:`Q` (:mod:`zkit.mwigner.current`).
+
+Command line::
+
+    python -m zkit.mwigner.analysis <deck.inp> <wfs.h5>
+
+runs :func:`analyze_run` and :func:`animate_run`.
 """
 
 import os
@@ -435,25 +435,34 @@ def animate_run(
 
 
 def analyze_covariance(deck, wfs, run_dir="."):
-    """Compute the 4D covariance diagnostics for every snapshot of a
-    TDSEZ run and write a CSV + a figure.
+    r"""Covariance diagnostics for every snapshot of a run.
 
-    CSV (znse_covariance.csv) columns, one row per snapshot:
-      snap, t, Sxx, Syy, Spxpx, Spyy, Sxpx, Sypy, Sxy, Spxpy,
-      nu_min, nu_max, mu_G, mu_true, non_gaussian, pc1_x, pc1_px,
-      pc1_y, pc1_py
-    where (pc1_*) is the dominant principal-component eigenvector of Σ
-    (descriptive only -- NOT a qubit).
+    Uses :func:`zkit.mwigner.covariance.covariance_diagnostics` on each snapshot.
 
-    Figure (znse_covariance.pdf):
-      (top)   Σxx and Σyy vs time  -> wavepacket spreading / transverse
-              spreading during ionisation.
-      (mid)   |Σxpy| and |Σypx| (cross-quadrature / which-path) vs time.
-      (bottom) true purity μ_true vs Gaussian purity μ_G vs time, with a
-              shaded band marking where μ_G has underflowed (diagnostic
-              invalid).
+    Parameters
+    ----------
+    deck : str
+        TDSE-Z input deck.
+    wfs : str
+        Wavefunction file ``td/wfs_<input>.h5``.
+    run_dir : str, optional
+        Directory of the run and of the output files.
 
-    All physics is read from the deck via zkit. Run + zkit.physics.
+    Returns
+    -------
+    dict
+        ``csv`` and ``figure`` (paths) and ``n_snaps``.
+
+    Notes
+    -----
+    Writes ``znse_covariance.csv`` (one row per snapshot: ``snap``, ``t``,
+    ``Sxx``, ``Syy``, ``Spxpx``, ``Spypy``, ``Sxpx``, ``Sypy``, ``Sxy``,
+    ``Spxpy``, ``nu_min``, ``nu_max``, ``mu_G``, ``mu_true``, ``non_gaussian``,
+    and the dominant principal component ``pc1_x``, ``pc1_px``, ``pc1_y``,
+    ``pc1_py``) and ``znse_covariance.pdf`` (variances, the cross-quadrature
+    covariances :math:`\lvert\Sigma_{x p_y}\rvert` and
+    :math:`\lvert\Sigma_{y p_x}\rvert`, and the true against the Gaussian purity,
+    with the range where :math:`\mu_G` underflows marked).
     """
     from . import covariance as cv
 
@@ -464,7 +473,7 @@ def analyze_covariance(deck, wfs, run_dir="."):
     with h5py.File(wfs_path, "r") as f:
         raw = f["wavefunction"][...]
     n_snaps = raw.shape[0]
-    snap_times = [i * 280.0 for i in range(n_snaps)]  # t=i*280 a.u.
+    snap_times = _snap_times(n_snaps, deck, run_dir)
 
     rows = []
     Sxx = []
@@ -574,22 +583,34 @@ def analyze_covariance(deck, wfs, run_dir="."):
 def analyze_autocorr(
     deck="ZnSe_d20_A0.005338.inp", wfs="wfs_ZnSe_d20_A0.005338.h5", run_dir=".", ref=0
 ):
-    """Autocorrelation / survival analysis with the rigorous |A|^2 <= P(t)
-    quantum-information bound, for every snapshot of a TDSEZ run.
+    """Autocorrelation and reduced purity for every snapshot of a run.
 
-    Writes:
-      CSV  (znse_autocorr.csv): columns snap, t, A_re, A_im, |A|^2,
-           P=Tr rho^2, gap=P-|A|^2, bound_ok
-      PDF  (znse_autocorr.pdf): two panels --
-        (top)    survival |A(t)|^2 (black) and reduced purity P(t) (blue);
-                the shaded region between them is the transverse
-                information loss P - |A|^2 that the autocorrelation
-                alone misses.
-        (bottom) the gap P(t) - |A(t)|^2 vs time.
+    For a pure initial state the survival probability of the reduced state is
+    bounded by the purity of the reduced density matrix (Cauchy-Schwarz); the
+    function evaluates the bound with :func:`zkit.mwigner.autocorr.autocorr_analysis`.
 
-    The inequality |A(t)|^2 <= P(t) is the Cauchy-Schwarz bound for a
-    pure initial state (Sec. autocorr).  All physics is read from the
-    deck via zkit.Run / zkit.physics; nothing is hard-coded.
+    Parameters
+    ----------
+    deck : str
+        TDSE-Z input deck.
+    wfs : str
+        Wavefunction file ``td/wfs_<input>.h5``.
+    run_dir : str, optional
+        Directory of the run and of the output files.
+    ref : int, optional
+        Index of the reference snapshot.
+
+    Returns
+    -------
+    dict
+        ``csv`` and ``figure`` (paths), ``result`` (the decay analysis),
+        ``n_snaps`` and ``bound_all_hold``.
+
+    Notes
+    -----
+    Writes ``znse_autocorr.csv`` with the columns ``snap``, ``t``, ``A_re``,
+    ``A_im``, ``survival_red``, ``survival_full``, ``P``, ``P0``, ``bound_rhs``,
+    ``gap`` and ``bound_ok``, and ``znse_autocorr.pdf``.
     """
     from . import autocorr as ac
 
@@ -600,7 +621,7 @@ def analyze_autocorr(
     with h5py.File(wfs_path, "r") as f:
         raw = f["wavefunction"][...]  # (n_snap, nx, ny, 2)
     n_snaps = raw.shape[0]
-    snap_times = [i * 280.0 for i in range(n_snaps)]
+    snap_times = _snap_times(n_snaps, deck, run_dir)
 
     # stack complex snapshots
     psi = np.empty((n_snaps, nx, nx), dtype=np.complex128)
@@ -694,45 +715,54 @@ def analyze_autocorr(
     }
 
 
-def _snap_times(n_snaps, deck="ZnSe_d20_A0.005338.inp", run_dir="."):
-    """Real snapshot times from the deck: t_i = i * OutputStrideWFS * TimeStep."""
-    try:
-        pass  # not used; keep import local
-    except Exception:
-        pass
-    stride = 7000.0
-    dt = 0.04
-    try:
-        import zkit
+def _snap_times(n_snaps, deck="ZnSe_d20_A0.005338.inp", run_dir=".", snap_dt=280.0):
+    """Snapshot times t_i = i * OutputStrideWFS * TimeStep from the deck.
 
-        run = zkit.simulation.Run(deck, workdir=run_dir)
-        stride = float(getattr(run, "OutputStrideWFS", stride) or stride)
-        dt = float(getattr(run, "TimeStep", dt) or dt)
+    ``snap_dt`` (a.u.) is used when the deck cannot be read or does not set
+    both keys.
+    """
+    from ..simulation import Run
+
+    try:
+        meta = Run(run_dir, os.path.basename(deck)).meta
+        step = meta.output_stride_wfs * meta.time_step
     except Exception:
-        pass
-    return [i * stride * dt for i in range(n_snaps)]
+        step = 0.0
+    if not step > 0:
+        step = snap_dt
+    return [i * step for i in range(n_snaps)]
 
 
 def analyze_autocorr_sizes(sizes=None, run_dir=".", selected=None, ref=0, snap_dt=280.0):
-    """Multi-size autocorrelation / decay-rate analysis (Figure 5 material).
+    r"""Autocorrelation and decay rates for a series of runs of different size.
 
     Parameters
     ----------
-    sizes : list of (deck, wfs, label) tuples, e.g.
-            [("ZnSe_d20_...inp","wfs_ZnSe_d20_...h5","d20"), ...].
-            If None, auto-discovers every wfs_ZnSe*.h5 in run_dir.
-    selected : subset of labels to plot |A(t)| and arg A(t) for
-               (default: first two discovered, or all if <=4).
+    sizes : list of tuple, optional
+        ``(deck, wfs, label)`` per run. By default every ``wfs_ZnSe*.h5`` in
+        ``run_dir`` is used.
+    run_dir : str, optional
+        Directory of the runs and of the output files.
+    selected : list of str, optional
+        Labels whose :math:`\lvert A(t)\rvert^2` and :math:`\arg A(t)` are
+        plotted (default: the first two, or all when there are at most four).
+    ref : int, optional
+        Index of the reference snapshot.
+    snap_dt : float, optional
+        Time between snapshots (a.u.) when it cannot be taken from the deck.
 
-    Writes
-    ------
-      znse_autocorr_sizes.csv  : per size: label, n_snaps, Gamma_fit,
-          S_VN_max, |A|(t0), |A|(t_end), and per-snapshot |A|/arg columns.
-      znse_autocorr_A2.pdf     : |A_full(t)|^2 vs t for selected sizes  (Fig 5a)
-      znse_autocorr_arg.pdf    : arg A_full(t) vs t for selected sizes  (Fig 5b)
-      znse_autocorr_Gamma.pdf  : Gamma_fit vs S_VN^max for all sizes    (Fig 5c)
+    Returns
+    -------
+    dict
+        The per-run results and the paths of the CSV file and figures.
 
-    Returns dict with the per-size result dicts and figure paths.
+    Notes
+    -----
+    Writes ``znse_autocorr_sizes.csv`` (per run: label, number of snapshots,
+    fitted decay rate, maximal von Neumann entropy, :math:`\lvert A\rvert` at the
+    first and last snapshot, and per-snapshot :math:`\lvert A\rvert` and
+    :math:`\arg A`) and the figures ``znse_autocorr_A2.pdf``,
+    ``znse_autocorr_arg.pdf`` and ``znse_autocorr_Gamma.pdf``.
     """
     from . import autocorr as ac
 
@@ -764,7 +794,7 @@ def analyze_autocorr_sizes(sizes=None, run_dir=".", selected=None, ref=0, snap_d
         with h5py.File(wfs_path, "r") as f:
             raw = f["wavefunction"][...]
         n_snaps = raw.shape[0]
-        snap_times = _snap_times(n_snaps, deck, run_dir)
+        snap_times = _snap_times(n_snaps, deck, run_dir, snap_dt)
         psi = np.empty((n_snaps, nx, nx), dtype=np.complex128)
         for i in range(n_snaps):
             psi[i] = raw[i, :, :, 0] + 1j * raw[i, :, :, 1]

@@ -1,15 +1,16 @@
-zkit: analysis tools for TDSEZ
-==============================
+zkit: analysis tools for TDSE-Z
+===============================
 
 .. image:: _static/logo.png
    :align: center
+   :width: 180px
    :alt: zkit logo
 
 .. raw:: html
 
    <div style="text-align: center; margin-top: 0.5em;">
    <p><strong>Isogeometric analysis and time-dependent Schrödinger workflows</strong></p>
-   <p><em>Read, reconstruct, analyze, and visualize TDSEZ simulations</em></p>
+   <p><em>Read, reconstruct, analyze, and visualize TDSE-Z simulations</em></p>
    </div>
 
 .. toctree::

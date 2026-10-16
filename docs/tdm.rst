@@ -1,7 +1,7 @@
 Transition dipole moments
 =========================
 
-TDSEZ computes dipole couplings between eigenstates. zkit reads the static
+TDSE-Z computes dipole couplings between eigenstates. zkit reads the static
 eigenstate output and exposes both full matrices and per-state rows.
 
 Read full TDM matrices

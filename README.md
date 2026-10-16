@@ -1,125 +1,140 @@
-# zkit — TDSEZ post-processing toolkit
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dahbiz/zkit/main/docs/_static/logo.png" alt="zkit" width="180">
+</p>
 
-`zkit` reads the HDF5 outputs written by the **TDSEZ** solver
-(Time-Dependent Schrödinger Equation solver, B-spline / IGA) and provides
-reconstruction, analytic-reference, and visualization helpers.
+<p align="center">
+  <strong>Analysis toolkit for TDSE-Z simulations</strong><br>
+  Read, reconstruct, validate and visualise the output of the TDSE-Z solver
+</p>
 
-It is the analysis half of TDSEZ: the C++ binary produces `EigenData_*.h5`
-/ `wfs_*.h5` / `TimeEvolutionData_*.h5`, and `zkit` turns those into spectra,
-wavefunctions, transition-dipole diagrams, and Wigner transforms.
-
-> **Status: BETA (0.1.0b1).** APIs may change between beta releases. File
-> formats written by the TDSEZ binary are the stable contract.
+<p align="center">
+  <a href="https://github.com/dahbiz/zkit/actions/workflows/ci.yml"><img src="https://github.com/dahbiz/zkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/dahbiz/zkit/actions/workflows/docs.yml"><img src="https://github.com/dahbiz/zkit/actions/workflows/docs.yml/badge.svg" alt="Documentation"></a>
+  <a href="https://dahbiz.github.io/zkit/"><img src="https://img.shields.io/badge/docs-dahbiz.github.io%2Fzkit-3b6ea5" alt="Docs"></a>
+  <img src="https://img.shields.io/badge/python-3.10%E2%80%933.13-3b6ea5" alt="Python 3.10-3.13">
+  <img src="https://img.shields.io/badge/license-BSD--2--Clause-3b6ea5" alt="License">
+</p>
 
 ---
 
-## Install
+`zkit` is the Python companion of [TDSE-Z](https://github.com/dahbiz/tdsez), a
+B-spline (isogeometric) solver for the time-dependent Schrödinger equation in
+1D, 2D and 3D. TDSE-Z writes HDF5 files; `zkit` turns them into spectra,
+observables, wavefunctions, transition-dipole diagrams and Wigner
+distributions, and validates the solver against exact solutions.
 
-### From source (recommended for now)
+**Documentation:** https://dahbiz.github.io/zkit/
+
+> **Status:** beta (0.1.0b1). The HDF5 formats written by TDSE-Z are the stable
+> interface; the Python API may still change between beta releases.
+
+## Installation
+
+`zkit` needs Python 3.10 or newer, `numpy` and `h5py`.
 
 ```bash
+pip install "git+https://github.com/dahbiz/zkit.git"
+# or, for development
+git clone https://github.com/dahbiz/zkit.git
 cd zkit
-pip install -e .        # PyPI name is "zkit-lib"; import name stays "zkit"
+pip install -e ".[test]"
 ```
 
-This installs the `zkit` import package and the `zkit` command-line tool.
+The distribution name is `zkit-lib`; the import name and the command are
+`zkit`. Optional extras:
 
-### Optional: Wigner-transform subpackage
+| Extra | Adds |
+|---|---|
+| `viz` | plotting (matplotlib) |
+| `vtk` | VTK export of wavefunctions (pyvista) |
+| `physics` | symbolic field expressions (sympy) |
+| `validation` | the `zkit validate` suite (scipy, sympy) |
+| `mwigner` | Wigner-function analysis (PyTorch, matplotlib) |
+| `docs` | building the documentation (Sphinx) |
 
-The `zkit.mwigner` module (Wigner quasi-probability transforms) needs PyTorch.
-It is **not** a core dependency — install it only if you need it:
-
-```bash
-pip install -e ".[mwigner]"
-```
-
-### Without installing (PYTHONPATH fallback)
-
-If you just want to run the tools or test suite without installing, point
-`PYTHONPATH` at the `src/` directory:
-
-```bash
-export PYTHONPATH=/path/to/zkit/src:$PYTHONPATH
-python -m zkit --help
-```
-
-The import package lives at `src/zkit/`.
-
----
+Install extras with, for example, `pip install -e ".[viz,validation]"`.
 
 ## Command-line tool
 
 ```bash
-zkit summary  <basename>            # summarize one simulation (needs --run-dir)
-zkit batch                         # summarize every TimeEvolutionData_*.h5 in td/
-zkit plot-wfs <td/wfs_base.h5>     # render a wavefunction snapshot to PNG (+--vtk)
-zkit tdm-plot <EigenData_base.h5>  # transition-dipole diagram + |mu_ij| heatmap
+zkit --run-dir RUN summary <input>     # summary of one run (spectrum, time series)
+zkit --run-dir RUN batch               # summary of every run in RUN/td/
+zkit plot-wfs RUN/td/wfs_<input>.h5    # wavefunction snapshot to PNG (--vtk for VTK)
+zkit tdm-plot RUN/static/EigenData_<input>.h5   # transition-dipole diagram and |mu_ij| map
+zkit validate --np 8                   # validate a TDSE-Z build against exact solutions
 ```
 
-Run `zkit --help` (or `python -m zkit --help`) for all options.
-
-## Quick TDSEZ examples
-
-After building the `tdsez` executable, run the small static 1D and 2D harmonic
-oscillator examples (each usually completes in a few seconds):
-
-```bash
-pip install -e ".[viz]"
-python examples/run_quick_examples.py --tdsez /path/to/tdsez
-```
-
-Use `--case 1d` or `--case 2d` to run one case. Results are written to
-`examples/output/` and include an HDF5 eigenvalue file, CSV spectrum, and PNG
-plot. The input decks are in `examples/inputs/`.
-
----
+`<input>` is the name of the TDSE-Z input file, e.g. `h2p.inp`. Run
+`zkit <command> --help` for the options of each command.
 
 ## Python API
 
 ```python
+import numpy as np
 import zkit
 
-# High-level: load a whole run (eigen + time-evolution) from a directory
-sim = zkit.load("run_dir", "h2p.inp")  # or zkit.Run(run_dir, base)
-E = sim.eigen.values  # converged eigenvalues (a.u.)
-ev = sim.evolution  # dipoles / populations / energies
+run = zkit.load("RUN", "h2p.inp")       # a TDSE-Z run directory and its input file
+E = run.spectrum.values                 # bound-state energies (a.u.)
+t, D = run.time, run.dipoles            # time series of td/TimeEvolutionData_<input>.h5
+ph = run.physics                        # carrier sign, fields E(t) from the input deck
 
-# Low-level: open a single eigen HDF5
-d = zkit.open_eig("static/EigenData_h2p.inp.h5")
-print(d["spectrum"], d["meta"], d["knots_x"])
-
-# Knot-vector sanity: reconstructed B-splines must sum to 1 (partition of unity)
-kv = zkit.reconstruct_knots(d["knots_x"], p=int(d["meta"]["SplineDegree"]))
-pou = zkit.partition_of_unity(kv, p, xs)
+# B-spline basis of a run: the functions sum to one inside the domain
+d = zkit.open_eig("RUN/static/EigenData_h2p.inp.h5")
+p = int(d["meta"]["SplineDegree"])
+kv = zkit.reconstruct_knots(d["knots_x"], p)
+xs = np.linspace(kv[0], kv[-1], 201)[1:-1]
+assert np.allclose(zkit.partition_of_unity(kv, p, xs), 1.0)
 ```
 
-Key helpers:
-- `zkit.open_eig`, `zkit.reconstruct_knots`, `zkit.partition_of_unity`
-- `zkit.io` — readers for eigen / evolution / timeseries / wfs / tdm
-- `zkit.viz` — `plot_wavefunction`, `plot_tdm`, `plot_transition_diagram`
-- `zkit.mwigner` — Wigner-transform analysis (requires the `mwigner` extra)
+Main modules:
 
----
+- `zkit.io`: readers for the eigen, time-evolution, wavefunction and
+  transition-dipole files;
+- `zkit.simulation`: the `Run` object for a whole run directory;
+- `zkit.physics`: carrier sign, field expressions and their integrals and
+  derivatives, read exactly as TDSE-Z reads the input;
+- `zkit.validation`: analytic references and the validation suite;
+- `zkit.viz`: wavefunction and transition-dipole plots;
+- `zkit.mwigner`: Wigner distributions, phase-space currents and covariances.
+
+## Validating a TDSE-Z build
+
+```bash
+export TDSEZ_BINARY=/path/to/tdsez.x
+zkit validate --quick                        # 2D cases, about 20 s
+zkit validate --np 8                         # all cases
+zkit validate --np 8 --reference old/tdsez.x # also compare two builds column by column
+```
+
+The suite runs free wave packets in a field, a driven oscillator (exact coherent
+state) and position-dependent-mass problems, and checks every column of every
+output table against exact solutions or exact identities; see the
+[validation page](https://dahbiz.github.io/zkit/validation.html).
+
+## Examples
+
+With a TDSE-Z build, the static 1D and 2D harmonic-oscillator examples run in a
+few seconds:
+
+```bash
+pip install -e ".[viz]"
+python examples/run_quick_examples.py --tdsez /path/to/tdsez.x
+```
+
+Results (HDF5 spectrum, CSV, PNG plot) are written to `examples/output/`; the
+input decks are in `examples/inputs/`. Larger campaigns are described in the
+[documentation](https://dahbiz.github.io/zkit/examples/index.html).
 
 ## Units
 
-TDSEZ code units: `hbar = 1`, `m = 1` ⇒ `hbar²/2m = 1/2`.
-Energies are reported in atomic units (a.u.). See `zkit.__init__` for the
-constants and the harmonic-oscillator / infinite-well reference formulas used
-by the validation suite.
+Atomic units throughout (ħ = m_e = e = 1). The mass, charge and fields are
+those of the TDSE-Z input deck.
 
----
+## License and acknowledgements
 
-## License
+BSD 2-Clause, see [LICENSE](LICENSE). Author: Zakaria Dahbi (King's College
+London), zdahbi@outlook.es.
 
-BSD 2-Clause — see [LICENSE](LICENSE).
-
-Author: Zakaria Dahbi (King's College London, Attosecond Quantum Physics Lab)
-— zdahbi@outlook.es
-
-## Acknowledgement
-
-`zkit` ships a lightweight, pure-Python `igakit.igalib.bsp` compatibility
-evaluator for IGA B-spline wavefunction reconstruction. It preserves the
-upstream evaluator interface while avoiding a separate compiled dependency.
-The bundled upstream BSD license is in `src/igakit/LICENSE.rst`.
+`zkit` includes a pure-Python implementation of the `igakit.igalib.bsp`
+B-spline evaluator interface for wavefunction reconstruction; the upstream
+BSD license is in `src/igakit/LICENSE.rst`.

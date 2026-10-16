@@ -58,12 +58,30 @@ import numpy as np
 
 
 def reduced_density(psi_series, dxs, axis=0):
-    """Reduced (axis-marginal) density matrices for every snapshot.
+    r"""Reduced density matrices of every snapshot, tracing out all axes but one.
 
-    Returns (rho_series, vol_axis) where
-        rho_series[i] = (n_a, n_a) complex matrix,
-        rho_series[i][a, b] = (prod_{T} dT) * sum_T psi_i[a,T] psi_i*[b,T],
-    and `vol_axis` is the active-axis spacing dx_a (for the trace).
+    .. math::
+
+       \rho_i(a, b) = \Bigl(\prod_{T} \Delta T\Bigr)
+                      \sum_T \psi_i(a, T)\,\psi_i^*(b, T),
+
+    normalised per snapshot to unit trace with the quadrature weight
+    :math:`\Delta a` of the kept axis (a pure reduced state has purity 1).
+
+    Parameters
+    ----------
+    psi_series : array_like
+        Snapshots, shape ``(n_snap, n_1[, n_2[, n_3]])``.
+    dxs : float or sequence of float
+        Grid spacing, one value for all axes or one per axis.
+    axis : int, optional
+        The kept axis.
+
+    Returns
+    -------
+    tuple
+        ``(rho_series, dx_a)``: complex array of shape ``(n_snap, n_a, n_a)``
+        and the spacing of the kept axis.
     """
     psi_series = np.asarray(psi_series, dtype=np.complex128)
     ndim = psi_series.ndim - 1
@@ -77,7 +95,7 @@ def reduced_density(psi_series, dxs, axis=0):
     trans_sp = vol / dxa
 
     rho = np.empty(
-        (psi_series.shape[0], psi_series.shape[1], psi_series.shape[1]), dtype=np.complex128
+        (psi_series.shape[0], psi_series.shape[1 + a], psi_series.shape[1 + a]), dtype=np.complex128
     )
     # build + trace-normalise per snapshot (so a pure reduced state has P=1)
     for i in range(psi_series.shape[0]):

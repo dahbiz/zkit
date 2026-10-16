@@ -1,39 +1,21 @@
-"""
-zkit.mwigner.current — the Wigner (phase-space) current computed from
-the marginal Wigner function W(x, p_x) produced by
-:func:`zkit.mwigner.transform.get_wigner_research`.
+r"""Phase-space (Wigner) current of a marginal Wigner function :math:`W(x, p)`.
 
-The Wigner function obeys a continuity equation in phase space,
+:math:`W(x, p)` is the marginal Wigner function of :func:`zkit.mwigner.transform.get_wigner_research`
+(the :math:`y` degree of freedom integrated out). It obeys the continuity
+equation
 
-    ∂_t W(x, p) + ∂_x J_x(x, p) + ∂_p J_p(x, p) = 0 ,
+.. math::
 
-with the *exact* (approximation-free) x-streaming current
+   \partial_t W + \partial_x J_x + \partial_p J_p = 0, \qquad
+   J_x = p\,W, \qquad J_p = -V'(x)\,W + Q(x, p),
 
-    J_x(x, p) = p * W(x, p) .
-
-For a potential V(x) the p-current is
-
-    J_p(x, p) = -V'(x) * W(x, p)  +  Q(x, p) ,
-
-where Q is the non-local Moyal quantum-force term.  For free motion
-(V=0) and for any QUADRATIC potential (e.g. the harmonic oscillator)
-the quantum force Q vanishes IDENTICALLY (the Wigner function then obeys
-the classical Liouville equation), which makes these the natural
-*analytical known solutions* to benchmark against.
-
-The current is therefore as accurate as the Wigner transform itself: J_x
-is an exact algebraic product of W with the momentum grid p, and the
-only numerical ingredient is the divergence (∂_x, ∂_p), taken with
-spectral (FFT) derivatives for machine-precision accuracy on
-band-limited states.
-
-The Moyal quantum force Q for a *general* (non-quadratic) potential
-is added with :func:`moyal_quantum_force`; see that function.  It is
-NOT needed for the analytical benchmarks (free, harmonic oscillator).
-
-NOTE: this module consumes the *marginal* Wigner (y integrated out), so
-it recovers only x- and p_x-dependent currents.  A full 4D Wigner
-would be needed for y- or p_y-currents.
+where :math:`Q` is the non-local Moyal quantum force (:math:`\hbar = m = 1`).
+:math:`Q` vanishes for free motion and for quadratic potentials, where
+:math:`W` follows the classical Liouville equation; these cases are exact
+references. Derivatives are spectral (FFT) on uniform grids, exact to
+round-off for states that decay to zero at the grid boundary. Only the
+:math:`x` and :math:`p_x` components are available from the marginal
+distribution.
 """
 
 import math
@@ -57,57 +39,119 @@ def _spectral_deriv_axis(F, dcoord, axis):
 
 
 def deriv_x(F, dx):
+    """Spectral derivative along the first (position) axis."""
     return _spectral_deriv_axis(F, dx, axis=0)
 
 
 def deriv_p(F, dp):
+    """Spectral derivative along the second (momentum) axis."""
     return _spectral_deriv_axis(F, dp, axis=1)
 
 
 # ───────────────────────────── current components ─────────────────────────────
 def current_x(W, p):
-    """J_x(x, p) = p * W(x, p)  — exact, no approximation.  p is the 1D
-    momentum grid; it broadcasts over the columns of W."""
+    r"""Streaming current :math:`J_x(x, p) = p\,W(x, p)`.
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function on the :math:`(x, p)` grid, shape ``(n_x, n_p)``.
+    p : array_like
+        Momentum grid (length ``n_p``).
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`J_x` with the shape of ``W``.
+    """
     p = np.asarray(p, dtype=np.float64)
     return p[None, :] * W
 
 
 def current_p_classical(W, x, Vp):
-    """J_p(x, p) = -V'(x) * W(x, p)  — the classical force term.  Valid
-    (exact) for free motion and any quadratic potential (Q=0 there).  Vp = dV/dx(x)."""
+    r"""Classical force current :math:`J_p(x, p) = -V'(x)\,W(x, p)`.
+
+    Exact for free motion and quadratic potentials (:math:`Q = 0`).
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x : array_like
+        Position grid (unused; kept for a uniform signature).
+    Vp : array_like
+        :math:`V'(x)` on the position grid (length ``n_x``).
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`J_p` with the shape of ``W``.
+    """
     Vp = np.asarray(Vp, dtype=np.float64)
     return -Vp[:, None] * W
 
 
-def current_p(W, x, Vp=None, moyal_terms=None):
-    """Full p-current.  With Vp given, returns the classical force term
-    (-V'(x) W).  If `moyal_terms` (a dict of V derivatives, see
-    moyal_quantum_force) is supplied, the non-local quantum force is added.
-    For free / quadratic V the quantum force is zero, so this equals the
-    classical term."""
+def current_p(W, x, Vp=None, moyal_terms=None, p=None):
+    """Momentum current :math:`J_p`, optionally including the Moyal quantum force.
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x : array_like
+        Position grid.
+    Vp : array_like, optional
+        :math:`V'(x)`; without it the classical part is zero.
+    moyal_terms : dict, optional
+        Odd derivatives of :math:`V` (see :func:`moyal_quantum_force`); adds the
+        quantum force :math:`Q`.
+    p : array_like, optional
+        Momentum grid; required with ``moyal_terms``.
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`J_p` with the shape of ``W``.
+
+    Raises
+    ------
+    ValueError
+        If ``moyal_terms`` is given without ``p``.
+    """
     Jp = current_p_classical(W, x, Vp) if Vp is not None else np.zeros_like(W)
     if moyal_terms is not None:
-        Jp = Jp + moyal_quantum_force(W, x, Vp, moyal_terms)
+        if p is None:
+            raise ValueError("current_p: the momentum grid p is required with moyal_terms")
+        Jp = Jp + moyal_quantum_force(W, x, p, moyal_terms)
     return Jp
 
 
 # ───────────────────────────── Moyal quantum force ─────────────────────────────
 def moyal_quantum_force(W, x, p, V_derivs):
-    """
-    Non-local quantum-force contribution Q(x, p) to J_p for a *general* V(x).
+    r"""Moyal quantum force :math:`Q(x, p)` for a general potential.
 
-    From the Moyal/Wigner equation (hbar=1, m=1),
-        d_t W = -p d_x W + V'(x) d_p W  +  R_Q ,
-    where R_Q = moyal_residual(...) is the Moyal odd-derivative series.  In the
-    continuity form  d_t W + d_x(p W) + d_p J_p = 0  one identifies
-        J_p = -V'(x) W  +  Q ,     with   d_p Q = -R_Q .
-    Hence Q is the (spectral) p-antiderivative of -R_Q.  For a p-localised
-    Wigner the physically-correct integration constant makes  int_p Q dp = 0
-    (the quantum force carries no net p-momentum), so we subtract the p-mean of
-    the antiderivative.
+    With the Moyal residual :math:`R_Q` (:func:`moyal_residual`) the continuity
+    form gives :math:`\partial_p Q = -R_Q`. :math:`Q` is obtained as the spectral
+    antiderivative in :math:`p`, with the integration constant fixed by
+    :math:`\int Q\,dp = 0` (the quantum force carries no net momentum).
 
-    V_derivs: dict {'Vp': dV/dx, 'V3': d3V/dx3, 'V5': d5V/dx5, 'V7': ...}
-    (only odd derivatives enter).  Returns Q with the same shape as W.
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x : array_like
+        Position grid.
+    p : array_like
+        Uniform momentum grid.
+    V_derivs : dict
+        Odd derivatives of :math:`V` on the position grid: ``"Vp"``
+        (:math:`V'`), ``"V3"``, ``"V5"``, ``"V7"`` (:math:`V^{(3)}`,
+        :math:`V^{(5)}`, :math:`V^{(7)}`).
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`Q` with the shape of ``W``.
     """
     dp = p[1] - p[0]
     RQ = moyal_residual(W, x, p, V_derivs)  # (nx, np)
@@ -133,17 +177,38 @@ def moyal_quantum_force(W, x, p, V_derivs):
 
 
 def moyal_residual(W, x, p, V_derivs):
-    """
-    Quantum residual R_Q(x, p) = ∂_t W - (-p ∂_x W + V'(x) ∂_p W) for a general V.
+    r"""Quantum residual of the Moyal equation.
 
-    V_derivs is a dict {'Vp': dV/dx, 'V3': d³V/dx³, 'V5': d⁵V/dx⁵, ...} (only the
-    odd derivatives enter; even derivatives vanish by antisymmetry of the Moyal
-    bracket).  Implemented with spectral ∂_p derivatives (machine accuracy).
+    .. math::
 
-    For free (V=const) and quadratic (V'''=V⁵=...=0) potentials this is EXACTLY
-    ZERO, which is the benchmark that proves the classical current is sufficient
-    there.  For cubic/quartic/etc. potentials it is non-zero and captures the
-    non-locality of the Wigner dynamics.
+       R_Q = \sum_{n \ge 1} \frac{(-1)^n}{2^{2n} (2n+1)!}\,
+             V^{(2n+1)}(x)\,\partial_p^{2n+1} W ,
+
+    i.e. :math:`\partial_t W - (-p\,\partial_x W + V'(x)\,\partial_p W)`. Terms up
+    to :math:`V^{(7)}` are included, stopping at the first missing derivative.
+    :math:`R_Q = 0` for free motion and quadratic potentials.
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x : array_like
+        Position grid.
+    p : array_like
+        Uniform momentum grid.
+    V_derivs : dict
+        ``"V3"``, ``"V5"``, ``"V7"``: odd derivatives of :math:`V` sampled on the
+        position grid of ``W``.
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`R_Q` with the shape of ``W``.
+
+    Raises
+    ------
+    ValueError
+        If a derivative array is not sampled on the position grid of ``W``.
     """
     dp = p[1] - p[0]
     # guard: derivative arrays must live on the same x-grid as W (axis 0)
@@ -174,18 +239,32 @@ def moyal_residual(W, x, p, V_derivs):
 
 # ───────────────────────────── continuity residual ─────────────────────────────
 def continuity_residual(W, x, p, dWdt, Vp=None, moyal_derivs=None):
-    """
-    Compute the continuity-equation residual
+    r"""Residual of the phase-space continuity equation.
 
-        R(x, p) = ∂_t W  +  ∂_x(p W)  +  ∂_p J_p ,
+    .. math::
 
-    which must be ~0 for a correctly computed current.  dWdt is the analytic (or
-    reliably computed) time derivative of W.  Vp = dV/dx for the classical
-    p-current; if `moyal_derivs` is given, the Moyal quantum residual is added
-    so that the full equation is checked for arbitrary V.
+       R = \partial_t W + \partial_x (p\,W) + \partial_p J_p^{\mathrm{cl}} - R_Q ,
 
-    For the analytical benchmarks (free, harmonic oscillator) Vp is None or the
-    HO force, moyal_derivs is None, and R should be ~1e-10 or better.
+    which vanishes for a correct current. :math:`R_Q` (:func:`moyal_residual`) is
+    subtracted only when ``moyal_derivs`` is given.
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x, p : array_like
+        Uniform position and momentum grids.
+    dWdt : numpy.ndarray
+        Time derivative of :math:`W`.
+    Vp : array_like, optional
+        :math:`V'(x)` for the classical force current.
+    moyal_derivs : dict, optional
+        Odd derivatives of :math:`V` for the quantum residual.
+
+    Returns
+    -------
+    numpy.ndarray
+        :math:`R` with the shape of ``W``.
     """
     dx = x[1] - x[0]
     dp = p[1] - p[0]
@@ -203,7 +282,27 @@ def continuity_residual(W, x, p, dWdt, Vp=None, moyal_derivs=None):
 
 # ───────────────────────────── convenience ─────────────────────────────
 def compute_current(W, x, p, dWdt=None, Vp=None, moyal_derivs=None):
-    """Return a dict with Jx, Jp, and (optionally) the continuity residual."""
+    """Phase-space current and, optionally, the continuity residual.
+
+    Parameters
+    ----------
+    W : numpy.ndarray
+        Wigner function, shape ``(n_x, n_p)``.
+    x, p : array_like
+        Uniform position and momentum grids.
+    dWdt : numpy.ndarray, optional
+        Time derivative of :math:`W`; adds the continuity residual.
+    Vp : array_like, optional
+        :math:`V'(x)` for the classical force current.
+    moyal_derivs : dict, optional
+        Odd derivatives of :math:`V`, used in the residual only.
+
+    Returns
+    -------
+    dict
+        ``Jx`` and ``Jp`` (classical part), and ``residual`` when ``dWdt`` is
+        given (:func:`continuity_residual`).
+    """
     out = {
         "Jx": current_x(W, p),
         "Jp": current_p_classical(W, x, Vp) if Vp is not None else np.zeros_like(W),
@@ -214,4 +313,5 @@ def compute_current(W, x, p, dWdt=None, Vp=None, moyal_derivs=None):
 
 
 def linf_norm(F):
+    """Largest absolute value of an array."""
     return np.max(np.abs(F))

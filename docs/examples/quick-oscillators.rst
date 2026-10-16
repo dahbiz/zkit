@@ -1,12 +1,12 @@
 Quick oscillator, heterostructure, and dynamics examples
 =========================================================
 
-The repository includes small, deterministic TDSEZ examples for static
+The repository includes small, deterministic TDSE-Z examples for static
 oscillators, a three-dimensional reconstruction smoke test, a finite quantum
 well, and driven dynamics.  Static cases disable propagation and complete in a
 few seconds, including MPI/PETSc startup.
 
-Build TDSEZ in a separate directory, then run the examples from the zkit
+Build TDSE-Z in a separate directory, then run the examples from the zkit
 checkout::
 
    python -m pip install -e ".[viz]"
@@ -87,7 +87,7 @@ The dashed curve is the analytic two-level rotating-wave estimate
    P_1(t) \simeq \sin^2\!\left(\frac{E_0 |x_{01}| t}{4}\right),
    \qquad |x_{01}|=\sqrt{\frac{\hbar}{2m\omega}},
 
-with ``E0 = 0.05`` and ``omega = 0.2`` in atomic units.  The TDSEZ curves
+with ``E0 = 0.05`` and ``omega = 0.2`` in atomic units.  The TDSE-Z curves
 retain the full three-state dynamics, so their difference from this dashed
 reference shows where the two-level approximation breaks down.
 

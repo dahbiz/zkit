@@ -1,7 +1,7 @@
 Input and output formats
 ========================
 
-This page documents the exact HDF5 layouts produced by TDSEZ and consumed by
+This page documents the exact HDF5 layouts produced by TDSE-Z and consumed by
 zkit.
 
 ``static/EigenData_<input>.h5``
@@ -153,7 +153,7 @@ Reader:
 TDM outputs
 -----------
 
-TDSEZ emits:
+TDSE-Z emits:
 
 - ``static/TDM_Dx_<stem>.npy``
 - ``static/EigenEnergies_<stem>.npy``

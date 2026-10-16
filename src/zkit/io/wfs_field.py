@@ -1,26 +1,26 @@
-"""Reconstruct TDSEZ wavefunctions from B-spline coefficients using igakit.
+"""Reconstruct TDSE-Z wavefunctions from their B-spline coefficients.
 
-TDSEZ writes the solution psi as B-spline *coefficients* (the IGA dof vector)
-into ``td/wfs_<input>.h5`` via the PETSc HDF5 viewer.  The file layout is:
+TDSE-Z stores the wavefunction as B-spline *coefficients* (the IGA degrees of
+freedom), not as values on a grid.  The time-dependent snapshots are written
+to ``td/wfs_<input>.h5`` with the PETSc HDF5 viewer::
 
-    /wavefunction                  (n_snap, n_dof_x[, n_dof_y[, n_dof_z]], 2)  [Re, Im]
-    /knots_x, /knots_y, /knots_z   (1-D)  PetIGA *compact* knot vector
-    /knots_x.attrs:
-        SplineDegree  (int)
-        nfuncs       (int)   number of basis functions on that axis
-        LMin, LMax   (float) domain bounds
+    /wavefunction   (n_snap, n_x[, n_y[, n_z]], 2)   trailing axis = [Re, Im]
+    /knots_x        (1-D) PetIGA compact knot vector of the x axis
+    /knots_y        (1-D) same for y (2-D and 3-D runs)
+    /knots_z        (1-D) same for z (3-D runs)
 
-The coefficients are stored in tensor (i, j, k) index order (NOT the PetIGA
-node-closure global dof order), so a simple reshape to ``(nx, ny, nz, 2)``
-recovers the control points.
+Each ``knots_*`` dataset carries the integer attributes ``SplineDegree`` (the
+degree ``p``) and ``nfuncs`` (the number of basis functions on that axis),
+which are the attributes this module reads.
 
-We rebuild the *open* knot vector PetIGA/igakit expect by appending one
-trailing copy of the last knot (PetIGA's compact vector already has the
-right-end knot at multiplicity ``p``, so only ONE extra copy is needed to
-reach the open multiplicity ``p+1``).  Then we evaluate the B-spline with
-igakit's compiled evaluator ``igakit.igalib.bsp.Evaluate{1,2,3}`` (the
-high-level ``NURBS.evaluate()`` is broken in igakit 0.1.0 -- it returns an
-empty array -- but the compiled engine works perfectly).
+The coefficients are stored in tensor ``(i, j, k)`` index order, so the
+per-axis shape of a snapshot equals ``nfuncs`` and the coefficients are the
+control points of a tensor-product B-spline.
+
+The *open* knot vector expected by igakit is obtained by appending one copy
+of the last knot to PetIGA's compact vector.  The field is then evaluated
+with igakit's compiled evaluators ``igakit.igalib.bsp.Evaluate1``,
+``Evaluate2`` and ``Evaluate3``.
 """
 
 from __future__ import annotations
@@ -29,13 +29,13 @@ import numpy as np
 
 
 def _open_knots(compact_knots, last_knot):
-    """PetIGA compact vector -> open vector (append one trailing copy)."""
+    """Convert a PetIGA compact knot vector to an open one (append the last knot)."""
     kv = np.asarray(compact_knots, dtype=float)
     return np.append(kv, float(last_knot))
 
 
 def _reshape_static_coefficients(coeffs, nfuncs, state_name):
-    """Normalize a TDSEZ static state to ``(*nfuncs, 2)`` tensor order."""
+    """Normalize a TDSE-Z static state to ``(*nfuncs, 2)`` tensor order."""
     expected_shape = (*nfuncs, 2)
     flat_shape = (int(np.prod(nfuncs)), 2)
     if coeffs.shape == expected_shape:
@@ -49,25 +49,39 @@ def _reshape_static_coefficients(coeffs, nfuncs, state_name):
 
 
 def reconstruct_wfs(path, step=0, npoints=200, axes=None):
-    """Reconstruct the wavefunction on a spatial grid from td/wfs_*.h5.
+    r"""Evaluate one wavefunction snapshot of ``td/wfs_<input>.h5`` on a grid.
 
     Parameters
     ----------
-    path : str | Path
+    path : str or pathlib.Path
         Path to ``td/wfs_<input>.h5``.
-    step : int
-        Snapshot index into the leading (time) axis.
-    npoints : int
-        Number of grid points per axis when ``axes`` is not given.
-    axes : list[array-like] | None
-        Optional explicit coordinate grids (one per spatial axis).  Each must
-        lie inside the knot span ``[kv[p], kv[-p-1]]``.
+    step : int, optional
+        Snapshot index along the leading (time) axis of ``wavefunction``.
+    npoints : int, optional
+        Number of grid points per axis when ``axes`` is not given.  The
+        default grid spans the whole knot span of each axis.
+    axes : list of array_like, optional
+        Explicit 1-D coordinate grids, one per spatial axis.  Each must lie
+        inside the knot span ``[open_kv[p], open_kv[nfuncs]]`` of its axis.
 
     Returns
     -------
-    dict with keys:
-        dim, step, axes, psi (complex), Re, Im, abs2,
-        SplineDegree, nfuncs, knots (open knot vectors).
+    dict
+        ``dim`` (int, spatial dimension), ``step`` (int), ``axes`` (list of
+        1-D coordinate arrays), ``psi`` (complex array on the tensor grid),
+        ``Re`` and ``Im`` (real and imaginary parts), ``abs2`` (the density
+        :math:`\lvert\psi\rvert^2`), ``SplineDegree`` and ``nfuncs`` (lists,
+        one entry per axis) and ``knots`` (the open knot vectors).
+
+    Raises
+    ------
+    KeyError
+        If the file has no ``wavefunction`` dataset or a ``knots_*`` dataset
+        is missing.
+    ValueError
+        If the dimensionality is not 1, 2 or 3, the coefficient shape does
+        not match the ``nfuncs`` attributes, or a grid in ``axes`` lies
+        outside the knot span.
     """
     import h5py
 
@@ -165,10 +179,11 @@ def reconstruct_wfs(path, step=0, npoints=200, axes=None):
 def _evaluate_on_grid(ctrl, open_knots, degrees, nfuncs, axes):
     """Evaluate the B-spline field on a tensor-product grid via igakit.
 
-    ``ctrl`` is the homogeneous control-point array (..., 3) = [w, Re, Im].
-    ``open_knots`` are the open (clamped) knot vectors, ``degrees`` the spline
-    degrees, ``nfuncs`` the per-axis basis counts, ``axes`` the 1-D coordinate
-    arrays. Returns ``(psi, Re, Im)`` complex arrays on the tensor grid.
+    ``ctrl`` is the homogeneous control-point array of shape ``(..., 3)``
+    holding ``[w, Re, Im]``; ``open_knots`` are the open knot vectors,
+    ``degrees`` the spline degrees, ``nfuncs`` the per-axis basis counts and
+    ``axes`` the 1-D coordinate arrays.  Returns ``(psi, Re, Im)`` on the
+    tensor grid (``psi`` complex, ``Re`` and ``Im`` real).
     """
     from igakit.igalib import bsp
 
@@ -211,15 +226,13 @@ def _evaluate_on_grid(ctrl, open_knots, degrees, nfuncs, axes):
 
 
 def _gauss_grid(open_knots, degree, nq=5):
-    """Tensor-product Gauss quadrature rule over the knot-vector spans.
+    """One-axis Gauss-Legendre rule over the non-empty knot spans.
 
-    Builds the Gauss points and weights for one axis by mapping the reference
-    Legendre rule on [-1, 1] into every *interior* knot span of the open knot
-    vector (igakit's ``EvalBasisFuns``/``FindSpan`` operate on the open vector).
-    The per-span Jacobian (span length) is folded into the weights, so this
-    integrates exactly on *non-uniform* knot vectors too.
-
-    Returns ``(points, weights)`` 1-D arrays.
+    The ``nq``-point Legendre rule on ``[-1, 1]`` is mapped into every span
+    between consecutive distinct knots of ``open_knots[p:nfuncs + 1]``, with
+    the Jacobian (half the span length) folded into the weights, so the rule
+    also applies to non-uniform knot vectors.  Returns ``(points, weights)``
+    as 1-D arrays.
     """
     nfuncs = len(open_knots) - degree - 1
     # unique interior knot values (the spline breaks), excluding the
@@ -242,28 +255,35 @@ def _gauss_grid(open_knots, degree, nq=5):
 
 
 def compute_wfs_norm(path, step=0, nq=5):
-    """Exact <psi|psi> via Gauss quadrature over the knot spans (igakit).
+    r"""Norm of a wavefunction snapshot by Gauss quadrature over the knot spans.
 
-    Reads the wavefunction + knot vectors from ``path`` and integrates |psi|^2
-    with a tensor-product Gauss rule mapped into every interior knot span, using
-    igakit's ``Evaluate{1,2,3}`` basis engine.  The per-span Jacobian (span
-    length) is folded into the weights, so the result is exact to the chosen
-    Gauss order (nq=5 already gives ~1e-15 for smooth splines) and works for
-    *non-uniform* knot vectors.  This is machine-accurate, unlike the
-    rectangular rule over a uniform plot grid.
+    Computes :math:`\langle\psi\vert\psi\rangle = \int \lvert\psi\rvert^2\,d^dr`
+    over the whole spline domain with a tensor-product Gauss-Legendre rule
+    of ``nq`` points per knot span on each axis.  Within a span the density
+    is a polynomial of degree ``2p`` per axis, so the rule is exact (up to
+    round-off) whenever ``2p <= 2*nq - 1``; the default ``nq=5`` is exact for
+    splines of degree ``p <= 4``.
 
     Parameters
     ----------
-    path : str | Path
+    path : str or pathlib.Path
         Path to ``td/wfs_<input>.h5``.
-    step : int
+    step : int, optional
         Snapshot index.
-    nq : int
-        Gauss points per knot span (default 5 -> exact for degree <= 9 splines).
+    nq : int, optional
+        Gauss points per knot span and axis.
 
     Returns
     -------
-    float : the squared norm integral of |psi|^2 over the whole domain.
+    float
+        The integral of :math:`\lvert\psi\rvert^2` over the domain.
+
+    Raises
+    ------
+    KeyError
+        If ``wavefunction`` or a ``knots_*`` dataset is missing.
+    ValueError
+        If the coefficient shape does not match the ``nfuncs`` attributes.
     """
     import h5py
 
@@ -286,7 +306,7 @@ def compute_wfs_norm(path, step=0, nq=5):
             nfuncs.append(int(knot_dset.attrs["nfuncs"]))
             kv = np.asarray(knot_dset[:], dtype=float)
             open_knots.append(np.append(kv, kv[-1]))
-        # size-compatibility guard (mirror of evaluate_wavefunction)
+        # size-compatibility guard (same check as in reconstruct_wfs)
         if tuple(coeffs.shape[:spatial_dim]) != tuple(nfuncs):
             raise ValueError(
                 f"{path}: coefficient shape {coeffs.shape} (per-axis "
@@ -344,27 +364,34 @@ def compute_wfs_norm(path, step=0, nq=5):
 
 
 def wfs_to_vtk(res, out_path, fmt=None):
-    """Export an evaluated wavefunction (from :func:`reconstruct_wfs`)
-    to a VTK file for ParaView.
+    """Export an evaluated wavefunction to a VTK file for ParaView.
 
     Parameters
     ----------
     res : dict
-        Output of :func:`reconstruct_wfs`.
-    out_path : str | Path
-        Destination file.  The extension chooses the format:
-        ``.vts`` -> VTK StructuredGrid (recommended, native regular grid),
-        ``.vtu`` -> VTK UnstructuredGrid (polydata points + cells),
-        ``.vtk`` -> legacy VTK StructuredGrid.  If ``fmt`` is given it
-        overrides the extension.
-    fmt : str | None
-        Optional explicit format: ``"vts"``, ``"vtu"`` or ``"vtk"``.
+        Output of :func:`reconstruct_wfs` or :func:`reconstruct_static_wfs`.
+    out_path : str or pathlib.Path
+        Destination file.  Unless ``fmt`` is given, the extension selects
+        the format: ``.vts`` for a VTK structured grid, ``.vtu`` for an
+        unstructured grid (the structured grid cast to unstructured) and
+        ``.vtk`` for the legacy VTK format.  Any other extension is written
+        as a structured grid.
+    fmt : {"vts", "vtu", "vtk"}, optional
+        Explicit format, overriding the extension.
 
-    The grid carries point data: ``psi_re``, ``psi_im``, ``psi_mag`` (|psi|),
-    and ``psi_phase`` (arg psi).  For 1D the y/z extents are collapsed to a
-    single layer so ParaView still reads it as a valid structured grid.
+    Returns
+    -------
+    str
+        ``out_path``.
 
-    Requires ``pyvista`` (declared in the ``viz`` extra).
+    Notes
+    -----
+    The grid carries the point-data arrays ``psi_re`` (Re psi), ``psi_im``
+    (Im psi), ``psi_mag`` (the density |psi|^2, taken from ``res["abs2"]``)
+    and ``psi_phase`` (arg psi, in radians).  1-D and 2-D fields are written
+    as structured grids with singleton extents in the missing directions.
+
+    Requires ``pyvista`` (the ``viz`` extra).
     """
     import pyvista as pv
 
@@ -414,33 +441,42 @@ def wfs_to_vtk(res, out_path, fmt=None):
 
 
 def reconstruct_static_wfs(path, istate=0, npoints=200, axes=None):
-    """Reconstruct a static eigenstate psi_<istate> from EigenData_*.h5.
+    """Evaluate the static eigenstate ``psi_<istate>`` of an EigenData file on a grid.
 
-    TDSEZ's static writer stores each converged eigenstate as a top-level
-    dataset ``psi_<i>`` (the IGA dof/coefficient vector, written by PETSc's
-    HDF5 viewer, i.e. already in tensor/i,j,k coefficient order) plus a
-    top-level ``knots_x[_y,_z]`` carrying the {SplineDegree, nfuncs,
-    mult_start_end} attributes.  This is the same information the propagation
-    writer emits, just split per-state instead of stacked under ``wavefunction``.
-
-    The reconstruction reuses the exact igakit B-spline engine PetIGA uses.
+    The static solver of TDSE-Z stores each converged eigenstate as a
+    top-level dataset ``psi_<i>`` of B-spline coefficients with a trailing
+    ``[Re, Im]`` axis, either in tensor shape ``(*nfuncs, 2)`` or flattened
+    to ``(prod(nfuncs), 2)`` in tensor order, together with top-level
+    ``knots_x`` (and ``knots_y``, ``knots_z``) datasets carrying the
+    ``SplineDegree`` and ``nfuncs`` attributes.  The spatial dimension is the
+    number of ``knots_*`` datasets present.  Evaluation follows
+    :func:`reconstruct_wfs`.
 
     Parameters
     ----------
-    path : str | Path
+    path : str or pathlib.Path
         Path to ``static/EigenData_<input>.h5``.
-    istate : int
+    istate : int, optional
         Index of the eigenstate (the ``<i>`` in ``psi_<i>``).
-    npoints : int
-        Grid points per axis when ``axes`` is None.
-    axes : list[array-like] | None
-        Optional explicit coordinate grids (one per spatial axis), each inside
-        the knot span ``[open_kv[p], open_kv[nfuncs]]``.
+    npoints : int, optional
+        Grid points per axis when ``axes`` is not given.
+    axes : list of array_like, optional
+        Explicit 1-D coordinate grids, one per spatial axis, each inside the
+        knot span ``[open_kv[p], open_kv[nfuncs]]``.
 
     Returns
     -------
-    dict (same keys as :func:`reconstruct_wfs`):
-        dim, istate, axes, psi, Re, Im, abs2, SplineDegree, nfuncs, knots.
+    dict
+        The same keys as :func:`reconstruct_wfs`, with ``istate`` in place
+        of ``step``.
+
+    Raises
+    ------
+    KeyError
+        If the dataset ``psi_<istate>`` does not exist.
+    ValueError
+        If the coefficient shape is incompatible with ``nfuncs`` or a grid
+        lies outside the knot span.
     """
     import h5py
 
