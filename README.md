@@ -73,10 +73,10 @@ zkit validate --np 8                   # validate a TDSE-Z build against exact s
 import numpy as np
 import zkit
 
-run = zkit.load("RUN", "h2p.inp")       # a TDSE-Z run directory and its input file
-E = run.spectrum.values                 # bound-state energies (a.u.)
-t, D = run.time, run.dipoles            # time series of td/TimeEvolutionData_<input>.h5
-ph = run.physics                        # carrier sign, fields E(t) from the input deck
+run = zkit.load("RUN", "h2p.inp")  # a TDSE-Z run directory and its input file
+E = run.spectrum.values  # bound-state energies (a.u.)
+t, D = run.time, run.dipoles  # time series of td/TimeEvolutionData_<input>.h5
+ph = run.physics  # carrier sign, fields E(t) from the input deck
 
 # B-spline basis of a run: the functions sum to one inside the domain
 d = zkit.open_eig("RUN/static/EigenData_h2p.inp.h5")
