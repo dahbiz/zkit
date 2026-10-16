@@ -55,6 +55,7 @@ docs = [
 ]
 test = [
     "build>=1.2",
+    "matplotlib>=3.7",
     "pytest>=8",
     "ruff>=0.9",
     "scipy>=1.12",

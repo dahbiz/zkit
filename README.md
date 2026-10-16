@@ -59,7 +59,13 @@ zkit --run-dir RUN batch               # summary of every run in RUN/td/
 zkit plot-wfs RUN/td/wfs_<input>.h5    # wavefunction snapshot to PNG (--vtk for VTK)
 zkit tdm-plot RUN/static/EigenData_<input>.h5   # transition-dipole diagram and |mu_ij| map
 zkit validate --np 8                   # validate a TDSE-Z build against exact solutions
+zkit pes RUN/td/surff_<input>.h5       # photoelectron spectrum dP/dE from t-SURFF
+zkit --run-dir RUN compare-scid <input> --scid-detail D --scid-pes P --omega W --e0 E
+                                       # one-to-one benchmark against SCID-TDSE
 ```
+
+`examples/scid_benchmark/` holds a complete TDSE-Z vs SCID-TDSE benchmark
+(inputs, outputs, figures and metrics) reproduced with `compare-scid`.
 
 `<input>` is the name of the TDSE-Z input file, e.g. `h2p.inp`. Run
 `zkit <command> --help` for the options of each command.

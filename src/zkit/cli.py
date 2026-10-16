@@ -141,6 +141,79 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
+def _regions(text: str | None) -> list | None:
+    if not text:
+        return None
+    out = [(0.0, float("inf"), "total")]
+    for part in text.split(","):
+        lo, hi = (float(v) for v in part.split(":"))
+        out.append((lo, hi, f"E {lo:g}-{hi:g}"))
+    return out
+
+
+def cmd_pes(args: argparse.Namespace) -> int:
+    import numpy as np
+
+    from zkit.io.scid import read_scid_pes
+    from zkit.io.surff import read_surff
+    from zkit.photoelectron import energy_spectrum, scid_energy_spectrum, to_spherical
+
+    spec = read_surff(args.surff_file)
+    curves = {}
+    if args.scid:
+        scid = read_scid_pes(args.scid)
+        k, theta = scid.k, scid.theta
+        energy, curves["SCID-TDSE"] = scid_energy_spectrum(scid)
+    else:
+        kmax = float(np.max(np.abs(np.concatenate([np.ravel(a) for a in spec.axes or ()]))))
+        k = np.linspace(kmax / args.nk, kmax, args.nk)
+        theta = (np.arange(args.ntheta) + 0.5) * np.pi / args.ntheta
+    energy, dpde = energy_spectrum(k, theta, to_spherical(spec, k, theta))
+    curves = {"TDSE-Z": dpde, **curves}
+    outdir = Path(args.outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    table = outdir / f"{args.prefix}_dPdE.txt"
+    header = "E (a.u.)  " + "  ".join(f"dP/dE {lab}" for lab in curves)
+    np.savetxt(table, np.column_stack([energy, *curves.values()]), header=header)
+    print(f"yield {args.prefix}: " + ", ".join(
+        f"{lab} {float(np.sum(0.5 * (y[1:] + y[:-1]) * np.diff(energy))):.4e}"
+        for lab, y in curves.items()
+    ))  # fmt: skip
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from zkit.viz.photoelectron import plot_pes
+
+    fig = plot_pes(energy, curves, reference=list(curves)[-1])
+    fig.savefig(outdir / f"{args.prefix}_dPdE.png", dpi=args.dpi)
+    print(f"wrote {table} and {outdir / (args.prefix + '_dPdE.png')}")
+    return 0
+
+
+def cmd_compare_scid(args: argparse.Namespace) -> int:
+    from zkit.benchmark import compare_with_scid, plot_comparison
+
+    cmp = compare_with_scid(
+        args.run_dir,
+        args.basename,
+        args.scid_detail,
+        args.scid_pes,
+        omega=args.omega,
+        e0=args.e0,
+        ip=args.ip,
+        regions=_regions(args.regions),
+    )
+    text = cmp.report()
+    print(text)
+    outdir = Path(args.outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / f"{args.prefix}_metrics.txt").write_text(text + "\n")
+    surff = Path(args.run_dir) / "td" / f"surff_{Path(args.basename).name}.h5"
+    for p in plot_comparison(cmp, outdir, surff, args.scid_pes, args.prefix, args.dpi):
+        print(f"wrote {p}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read TDSEZ simulation outputs.")
     parser.add_argument("--run-dir", default=".", help="Run directory containing td/ and static/")
@@ -206,6 +279,33 @@ def main(argv: list[str] | None = None) -> int:
     p_val.add_argument("--workdir", default="zkit-validation", help="Directory for the runs")
     p_val.add_argument("--quick", action="store_true", help="2D cases only (about a minute)")
 
+    p_pes = subparsers.add_parser(
+        "pes", help="dP/dE from a t-SURFF file (optionally against a SCID-TDSE table)"
+    )
+    p_pes.add_argument("surff_file", help="Path to td/surff_<input>.h5 (grid mode)")
+    p_pes.add_argument("--scid", default=None, help="SCID-TDSE sts_volkov/coulomb table")
+    p_pes.add_argument("--nk", type=int, default=300, help="|k| points (without --scid)")
+    p_pes.add_argument("--ntheta", type=int, default=90, help="theta points (without --scid)")
+    p_pes.add_argument("--outdir", default=".", help="Output directory")
+    p_pes.add_argument("--prefix", default="pes", help="Output filename prefix")
+    p_pes.add_argument("--dpi", type=int, default=150, help="Figure DPI")
+
+    p_cmp = subparsers.add_parser(
+        "compare-scid", help="Compare a TDSE-Z run with SCID-TDSE: metrics and figures"
+    )
+    p_cmp.add_argument("basename", help="TDSE-Z input basename, e.g. quick.inp")
+    p_cmp.add_argument("--scid-detail", required=True, help="SCID-TDSE detail_output table")
+    p_cmp.add_argument("--scid-pes", required=True, help="SCID-TDSE sts_volkov_table")
+    p_cmp.add_argument("--omega", type=float, required=True, help="Laser frequency (a.u.)")
+    p_cmp.add_argument("--e0", type=float, required=True, help="Peak field (a.u.)")
+    p_cmp.add_argument("--ip", type=float, default=0.5, help="Ionisation potential (a.u.)")
+    p_cmp.add_argument(
+        "--regions", default=None, help="Energy windows for yields, e.g. 0:0.12,0.12:0.47"
+    )
+    p_cmp.add_argument("--outdir", default=".", help="Output directory")
+    p_cmp.add_argument("--prefix", default="scid", help="Output filename prefix")
+    p_cmp.add_argument("--dpi", type=int, default=180, help="Figure DPI")
+
     args = parser.parse_args(argv)
     if args.command == "summary":
         return cmd_summary(args)
@@ -217,6 +317,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_tdm_plot(args)
     if args.command == "validate":
         return cmd_validate(args)
+    if args.command == "pes":
+        return cmd_pes(args)
+    if args.command == "compare-scid":
+        return cmd_compare_scid(args)
 
     parser.print_help()
     return 1

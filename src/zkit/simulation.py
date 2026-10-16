@@ -13,9 +13,17 @@ if TYPE_CHECKING:
 from zkit.io.base import detect_dimension
 from zkit.io.eigen import read_eigen
 from zkit.io.evolution import read_evolution
+from zkit.io.surff import read_surff
 from zkit.io.ts import read_timeseries
 from zkit.io.wavefunction import read_wfs
-from zkit.models import EigenData, SimulationMeta, TimeEvolution, TSSeries, WavefunctionSeries
+from zkit.models import (
+    EigenData,
+    SimulationMeta,
+    SurffSpectrum,
+    TimeEvolution,
+    TSSeries,
+    WavefunctionSeries,
+)
 
 
 class Run:
@@ -105,6 +113,11 @@ class Run:
             path = self.td_dir / f"wfs_{self.base}.h5"
             self._wavefunctions = read_wfs(path)
         return self._wavefunctions
+
+    @property
+    def surff(self) -> SurffSpectrum:
+        """t-SURFF spectrum (``td/surff_<input>.h5``)."""
+        return read_surff(self.td_dir / f"surff_{self.base}.h5")
 
     @property
     def physics(self) -> "Physics":

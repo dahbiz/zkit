@@ -18,6 +18,8 @@ zkit.io
    io/wfs_field
    io/tdm
    io/base
+   io/surff
+   io/scid
 
 zkit.viz
 --------
@@ -26,6 +28,18 @@ zkit.viz
    :maxdepth: 2
 
    viz/index
+
+zkit.photoelectron, zkit.hhg, zkit.benchmark
+--------------------------------------------
+
+.. automodule:: zkit.photoelectron
+   :members:
+
+.. automodule:: zkit.hhg
+   :members:
+
+.. automodule:: zkit.benchmark
+   :members:
 
 zkit.simulation
 ---------------

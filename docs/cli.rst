@@ -96,6 +96,37 @@ Options:
 - ``--prefix`` output filename prefix.
 - ``--dpi`` figure DPI.
 
+pes
+~~~
+
+Photoelectron energy spectrum dP/dE from a grid-mode t-SURFF file
+(``td/surff_<input>.h5``), optionally against a SCID-TDSE ``sts_volkov_table``
+(plain or gzipped). Writes ``<prefix>_dPdE.txt`` and ``<prefix>_dPdE.png``.
+
+.. code-block:: bash
+
+   zkit pes td/surff_quick.inp.h5 --scid scid/pes_volkov.table.gz --outdir figures
+
+Without ``--scid`` the spectrum is evaluated on ``--nk`` ``|k|`` points up to the
+grid edge and ``--ntheta`` polar angles.
+
+compare-scid
+~~~~~~~~~~~~
+
+Compare a TDSE-Z run with a SCID-TDSE run one to one: field, dipole and
+acceleration, harmonic spectrum, dP/dE (yields per energy window), angular
+distributions at the ATI peaks and momentum maps. See :doc:`photoelectron`.
+
+.. code-block:: bash
+
+   zkit --run-dir tdsez compare-scid quick.inp \
+     --scid-detail scid/detail.table.gz --scid-pes scid/pes_volkov.table.gz \
+     --omega 0.4 --e0 0.05 --regions 0:0.12,0.12:0.47,0.47:0.9,0.9:1.2 \
+     --outdir figures
+
+Prints and writes ``<prefix>_metrics.txt`` and the figures
+``<prefix>_{time,harmonics,pes,angular,kmap}.png``.
+
 validate
 ~~~~~~~~
 

@@ -29,11 +29,15 @@ import h5py
 import numpy as np
 
 from zkit._version import __version__
+from zkit.hhg import harmonic_spectrum
 from zkit.io import (
     compute_wfs_norm,
     detect_dimension,
     read_eigen,
     read_evolution,
+    read_scid_detail,
+    read_scid_pes,
+    read_surff,
     read_tdm,
     read_timeseries,
     read_wfs,
@@ -45,15 +49,26 @@ from zkit.io import (
 )
 from zkit.models import (
     EigenData,
+    ScidSpectrum,
     SimulationMeta,
+    SurffSpectrum,
     TimeEvolution,
     TSSeries,
     WavefunctionSeries,
 )
+from zkit.photoelectron import energy_spectrum, to_spherical
 from zkit.simulation import Run, load
 from zkit.viz import plot_tdm, plot_tdm_matrix, plot_transition_diagram, plot_wavefunction
 
 __all__ = [
+    "to_spherical",
+    "read_surff",
+    "read_scid_pes",
+    "read_scid_detail",
+    "harmonic_spectrum",
+    "energy_spectrum",
+    "SurffSpectrum",
+    "ScidSpectrum",
     "CHARGE",
     "HBAR",
     "EigenData",

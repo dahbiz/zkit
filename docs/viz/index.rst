@@ -6,3 +6,4 @@ zkit.viz
 
    wavefunction
    tdm
+   photoelectron

@@ -69,3 +69,8 @@ _tdsez_build/
 
 # zkit validate runs
 zkit-validation/
+
+# Benchmark data shipped with the repository
+!examples/scid_benchmark/tdsez/td/
+!examples/scid_benchmark/tdsez/static/
+!examples/scid_benchmark/tdsez/**/*.h5

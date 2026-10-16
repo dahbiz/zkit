@@ -1,0 +1,12 @@
+field E_z(t)        max |diff| / max |E| : 1.5e-12
+dipole <z>(t)       relative L2 diff     : 5.36e-03
+acceleration (t)    relative L2 diff     : 2.00e-02
+harmonics           median |log10 ratio| : 0.010 decades
+
+photoelectron yield                 TDSE-Z   SCID-TDSE   ratio
+total                           7.2448e-03  7.0220e-03   1.032
+E < 0.12 (below CAP k_min)      8.2579e-04  7.1493e-04   1.155
+two-photon order                6.3811e-03  6.2697e-03   1.018
+three-photon region             3.5829e-05  3.5586e-05   1.007
+E > 0.9                         8.3128e-08  8.4954e-08   0.978
+point-wise ratio on the first ATI peak (dP/dE > 10 % of max, E 0.18-0.36) : 0.884 .. 1.150

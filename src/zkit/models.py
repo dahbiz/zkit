@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Optional
 
 import numpy as np
 
@@ -155,10 +156,50 @@ class TSSeries:
             raise ValueError(f"times must be 1-D, got shape {self.times.shape}")
 
 
+@dataclass(frozen=True)
+class SurffSpectrum:
+    """t-SURFF photoelectron amplitudes written by TDSE-Z (``td/surff_<inp>.h5``)."""
+
+    momenta: np.ndarray  # (n_k, dim) canonical momenta k
+    amplitude: np.ndarray  # (n_k,) complex b(k), end term included when present
+    pes: np.ndarray  # (n_k,) |b(k)|^2 = dP/d^dk
+    amplitude_flux: Optional[np.ndarray] = None  # flux part alone (SurffEndTerm/SurffInterior)
+    axes: Optional[tuple] = None  # (k_x[, k_y[, k_z]]) in grid mode
+    pes_grid: Optional[np.ndarray] = None  # |b|^2 on the axes product grid
+    attrs: dict = field(default_factory=dict)
+
+    @property
+    def is_grid(self) -> bool:
+        return self.axes is not None and self.pes_grid is not None
+
+    @property
+    def energy(self) -> np.ndarray:
+        """Kinetic energy |k|^2 / 2 of each momentum (unit mass outside the surface)."""
+        m = float(self.attrs.get("exterior_mass", 1.0))
+        return np.sum(self.momenta**2, axis=1) / (2.0 * m)
+
+
+@dataclass(frozen=True)
+class ScidSpectrum:
+    """SCID-TDSE t-SURF amplitudes A(k) on a (|k|, theta, phi) product grid."""
+
+    k: np.ndarray  # (n_k,)
+    theta: np.ndarray  # (n_theta,) radians
+    phi: np.ndarray  # (n_phi,) radians
+    amplitude: np.ndarray  # (n_k, n_theta, n_phi) complex
+
+    @property
+    def density(self) -> np.ndarray:
+        """|A(k)|^2 = dP/d^3k."""
+        return np.abs(self.amplitude) ** 2
+
+
 __all__ = [
     "SimulationMeta",
     "TimeEvolution",
     "EigenData",
     "WavefunctionSeries",
     "TSSeries",
+    "SurffSpectrum",
+    "ScidSpectrum",
 ]

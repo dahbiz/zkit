@@ -32,6 +32,7 @@ zkit: analysis tools for TDSE-Z
    wigner
    visualization
    physics-outputs
+   photoelectron
    validation
    troubleshooting
 

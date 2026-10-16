@@ -3,6 +3,8 @@
 from zkit.io.base import detect_dimension
 from zkit.io.eigen import read_eigen
 from zkit.io.evolution import read_evolution
+from zkit.io.scid import read_scid_detail, read_scid_field, read_scid_pes
+from zkit.io.surff import read_surff
 from zkit.io.tdm import (
     read_tdm,
     tdm_magnitude_of_state,
@@ -30,4 +32,8 @@ __all__ = [
     "reconstruct_static_wfs",
     "wfs_to_vtk",
     "compute_wfs_norm",
+    "read_surff",
+    "read_scid_detail",
+    "read_scid_field",
+    "read_scid_pes",
 ]
