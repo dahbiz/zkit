@@ -15,6 +15,9 @@ output table through :class:`zkit.Run` and checks every column:
   the post-processor ``dipoles.x`` against the exact oscillator (distinct
   frequencies per axis) and hard-wall box results (:mod:`zkit.analytic`), and
   the rows of ``dipole_spectrum.x`` and ``recombination.x`` against the full matrix;
+* **static Kramers-Henneberger frame** (``Mode = kh``; 1D, 2D circular, 3D):
+  oscillator levels shift by m w0^2 <|alpha|^2>/2 exactly, against a lab-frame
+  run on the same grid and against the closed-form levels;
 * **position-dependent mass** (2D, 3D; no closed form): a field-free
   eigenstate is stationary (D, J, A, energies constant, autocorrelation
   exp(-i E0 t)); a driven state obeys Ehrenfest (J = dD/dt, A = d2D/dt2), the
@@ -544,6 +547,88 @@ def transition_dipoles(v: "Validator", case: str, n_states: int = 6) -> None:
             v.check(case, f"{t} row {a} = dipoles.x", got, want, 1e-10, max(np.max(want), 1e-300))
 
 
+KH_CASES = {
+    # name: (deck, frequencies of the oscillator, shift, tolerance of the absolute levels)
+    "kh oscillator 1D, m = 2, linear": (
+        """Dimension = 1
+Domain = -20, 20
+SplineDegree = 6
+NQuadratures = 10
+NSplines = 160
+Mass = 2.0
+Potential = 0.5*2.0*0.25*x*x
+Polarization = x
+LaserX = 0.3*sin(1.5*t)
+FinalTime = 20
+""",
+        (0.5,),
+        ("linear", 0.5, 0.3, 1.5, 2.0),
+        1e-9,
+    ),
+    "kh oscillator 2D, circular": (
+        """Dimension = 2
+Domain = -14, 14, -14, 14
+SplineDegree = 6
+NQuadratures = 10
+NSplines = 50
+Potential = 0.5*0.49*(x*x + y*y)
+Polarization = xy
+LaserX = 0.4*sin(1.3*t)
+LaserY = 0.4*cos(1.3*t)
+FinalTime = 30
+""",
+        (0.7, 0.7),
+        ("circular", 0.7, 0.4, 1.3, 1.0),
+        1e-6,
+    ),
+    "kh oscillator 3D, linear z": (
+        """Dimension = 3
+Domain = -10, 10, -10, 10, -10, 10
+SplineDegree = 5
+NQuadratures = 8
+NSplines = 22
+Potential = 0.5*(0.36*x*x + 0.6889*y*y + 1.3689*z*z)
+Polarization = z
+LaserZ = 0.5*sin(2.0*t)
+FinalTime = 20
+""",
+        (0.6, 0.83, 1.17),
+        ("linear", 1.17, 0.5, 2.0, 1.0),
+        3e-3,
+    ),
+}
+
+
+def kramers_henneberger(v: "Validator", case: str, n_states: int = 5) -> None:
+    """Mode = kh against the exact oscillator shift: KH minus lab-frame levels on
+    the same grid (the discretisation cancels) and the absolute levels."""
+    from zkit.analytic import kh_oscillator_shift, oscillator_states
+
+    deck, omega, (pol, w0, e0, w, m), tol = KH_CASES[case]
+    shift = kh_oscillator_shift(w0, e0, w, mass=m, circular=pol == "circular")
+    head = f"Verbose = 0\nNBoundStates = {n_states}\nTargetEigenvalue = 0\n"
+    name = case.replace(" ", "_").replace(",", "").replace("=", "")
+    lab = np.sort(
+        v._run(
+            name + "_td", head + deck + "Mode = td\nEnablePropagation = 0\n", v.binary
+        ).spectrum.values
+    )
+    kh = np.sort(v._run(name + "_kh", head + deck + "Mode = kh\n", v.binary).spectrum.values)
+    n = min(len(lab), len(kh))
+    v.report.checks.append(
+        Check(
+            case,
+            "KH - lab levels = exact shift",
+            float(np.max(np.abs(kh[:n] - lab[:n] - shift)) / shift),
+            1e-7,
+        )
+    )
+    exact = oscillator_states(omega, n)[1] + shift
+    v.report.checks.append(
+        Check(case, "KH levels = exact", float(np.max(np.abs(kh[:n] - exact) / exact)), tol)
+    )
+
+
 def validate(binary, reference=None, nproc=4, workdir="zkit-validation", quick=False) -> Report:
     """Run the validation suite; ``quick`` runs the 2D cases only (about a minute)."""
     v = Validator(binary, reference, nproc, workdir)
@@ -551,6 +636,10 @@ def validate(binary, reference=None, nproc=4, workdir="zkit-validation", quick=F
         if quick and "3D" in case:
             continue
         transition_dipoles(v, case)
+    for case in KH_CASES:
+        if quick and "3D" in case:
+            continue
+        kramers_henneberger(v, case)
     for q in (-1.0, 1.0):
         v.driven_oscillator_2d(q)
         if quick:
@@ -572,6 +661,7 @@ __all__ = [
     "field_work",
     "free_packet",
     "free_packet_autocorrelation",
+    "kramers_henneberger",
     "time_derivative",
     "transition_dipoles",
     "validate",

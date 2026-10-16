@@ -13,6 +13,12 @@ zero otherwise. With distinct frequencies the low-lying levels are
 non-degenerate, so states can be matched by energy and |d_ij| compared
 independently of the arbitrary eigenvector phases.
 
+Static Kramers-Henneberger frame (TDSE-Z Mode = kh): for an oscillator the
+cycle-averaged potential is V_KH = V + m w0^2 <|alpha|^2> / 2, so every level
+shifts by m w0^2 alpha0^2 / 4 for a linear field (alpha = alpha0 sin wt) and
+m w0^2 alpha0^2 / 2 for a circular one (|alpha| = alpha0), with the quiver
+amplitude alpha0 = |q| E0 / (m w^2) (:func:`kh_oscillator_shift`).
+
 Particle in a box [a, a + L] (hard walls): E_n = pi^2 n^2 / (2 m L^2) and,
 for n != m,
 
@@ -136,8 +142,25 @@ def compare_tdm(numeric: dict, numeric_energies: np.ndarray, reference: dict) ->
     return out
 
 
+def kh_oscillator_shift(
+    omega0: float,
+    e0: float,
+    omega: float,
+    mass: float = 1.0,
+    charge: float = -1.0,
+    circular: bool = False,
+) -> float:
+    """Level shift of an oscillator (frequency ``omega0`` along the field) in the
+    static Kramers-Henneberger frame, for a field of amplitude ``e0`` and
+    frequency ``omega``: m w0^2 alpha0^2 / 4 (linear) or / 2 (circular),
+    alpha0 = |q| e0 / (m omega^2)."""
+    alpha0 = abs(charge) * e0 / (mass * omega**2)
+    return (0.5 if circular else 0.25) * mass * omega0**2 * alpha0**2
+
+
 __all__ = [
     "box_energies",
+    "kh_oscillator_shift",
     "box_tdm",
     "compare_tdm",
     "is_nondegenerate",

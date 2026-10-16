@@ -45,6 +45,15 @@ box of width 10, :math:`\langle n|x|m\rangle = -8Lnm/(\pi^2(n^2-m^2)^2)` for
 :math:`n+m` odd. The rows of ``dipole_spectrum.x`` and ``recombination.x``
 must equal the full matrix on every axis. ``--quick`` skips the 3D case.
 
+**Static Kramers-Henneberger frame** (``Mode = kh``; 1D linear with
+:math:`m = 2`, 2D circular, 3D linear). For an oscillator the cycle-averaged
+potential is :math:`V + \tfrac12 m\omega_0^2\langle|\boldsymbol\alpha|^2\rangle`,
+so every level shifts by :math:`\tfrac14 m\omega_0^2\alpha_0^2` (linear) or
+:math:`\tfrac12 m\omega_0^2\alpha_0^2` (circular),
+:math:`\alpha_0 = |q|E_0/m\omega^2` (:func:`zkit.analytic.kh_oscillator_shift`).
+The KH levels minus the ``Mode = td`` levels on the same grid must equal the
+shift (the discretisation cancels), and the KH levels the closed form.
+
 **Free Gaussian packet in a uniform field** (3D, mass 0.7, ``q = -1`` and
 ``+1``). For a linear potential Ehrenfest is exact:
 
