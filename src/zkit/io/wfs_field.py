@@ -34,18 +34,28 @@ def _open_knots(compact_knots, last_knot):
     return np.append(kv, float(last_knot))
 
 
+def _to_xyz(coeffs, nfuncs, state_name):
+    """Coefficients in (*nfuncs, 2) order, i.e. [x, y, z].
+
+    TDSE-Z (PETSc, x fastest) stores a 2D/3D field as [z][y][x] in C order:
+    tensor datasets have the shape (n_z, n_y, n_x, 2) and the flat ``coeff_i``
+    vectors are that tensor raveled. Both are reversed here; 1D needs nothing.
+    """
+    dim = len(nfuncs)
+    rev = tuple(reversed(nfuncs))
+    if coeffs.shape == (int(np.prod(nfuncs)), 2):
+        coeffs = coeffs.reshape(*rev, 2)
+    if coeffs.shape != (*rev, 2):
+        raise ValueError(
+            f"{state_name} shape {coeffs.shape} is incompatible with the knot-derived "
+            f"coefficient shape {(*rev, 2)} (z, y, x order) or {(int(np.prod(nfuncs)), 2)} (flat)"
+        )
+    return np.transpose(coeffs, (*reversed(range(dim)), dim))
+
+
 def _reshape_static_coefficients(coeffs, nfuncs, state_name):
-    """Normalize a TDSE-Z static state to ``(*nfuncs, 2)`` tensor order."""
-    expected_shape = (*nfuncs, 2)
-    flat_shape = (int(np.prod(nfuncs)), 2)
-    if coeffs.shape == expected_shape:
-        return coeffs
-    if coeffs.shape == flat_shape:
-        return coeffs.reshape(expected_shape)
-    raise ValueError(
-        f"{state_name} shape {coeffs.shape} is incompatible with the knot-derived "
-        f"coefficient shape {expected_shape}"
-    )
+    """Normalize a TDSE-Z static state to ``(*nfuncs, 2)`` tensor order [x, y, z]."""
+    return _to_xyz(coeffs, nfuncs, state_name)
 
 
 def reconstruct_wfs(path, step=0, npoints=200, axes=None):
@@ -125,14 +135,14 @@ def reconstruct_wfs(path, step=0, npoints=200, axes=None):
         # The per-axis sizes of the coefficient tensor MUST equal the nfuncs
         # read from the knot vectors; otherwise the reshape below is wrong
         # (silent garbage / truncation). Fail loudly on any drift.
-        coeff_axes_shape = coeffs.shape[:spatial_dim]  # drop trailing (2,) for Re/Im
-        if tuple(coeff_axes_shape) != tuple(nfuncs):
+        # stored [z][y][x] (PETSc, x fastest): bring to [x, y, z]
+        try:
+            coeffs = _to_xyz(coeffs, nfuncs, f"{path}: wavefunction step {step}")
+        except ValueError as err:
             raise ValueError(
-                f"{path}: wavefunction coefficient shape {coeffs.shape} (per-axis "
-                f"{tuple(coeff_axes_shape)}) does not match the knot-derived basis sizes "
-                f"{tuple(nfuncs)} (from knots_x/y/z nfuncs). The file is "
-                f"inconsistent or uses an unsupported layout."
-            )
+                f"{err}; the knot-derived basis sizes are {tuple(nfuncs)} (x, y, z). The file "
+                f"is inconsistent or uses an unsupported layout."
+            ) from None
 
     # homogeneous control points: (..., 3) = [weight=1, Re, Im]
     ctrl = np.zeros((*nfuncs, 3), dtype=float)

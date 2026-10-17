@@ -77,14 +77,17 @@ def test_tdm_cli_normalizes_requested_axes(tmp_path: Path, monkeypatch: pytest.M
 
 
 def test_static_coefficients_accept_tdsez_tensor_and_flat_layouts() -> None:
-    tensor = np.arange(3 * 4 * 2, dtype=float).reshape(3, 4, 2)
-
-    assert _reshape_static_coefficients(tensor, [3, 4], "psi_0").shape == (3, 4, 2)
-    assert _reshape_static_coefficients(tensor.reshape(12, 2), [3, 4], "psi_0").shape == (
-        3,
-        4,
-        2,
-    )
+    # TDSE-Z stores [y][x] (x fastest): nfuncs (x, y) = (3, 4) -> tensor (4, 3, 2)
+    stored = np.arange(4 * 3 * 2, dtype=float).reshape(4, 3, 2)
+    out = _reshape_static_coefficients(stored, [3, 4], "psi_0")
+    assert out.shape == (3, 4, 2)
+    assert out[2, 1, 0] == stored[1, 2, 0]  # c(x=2, y=1)
+    flat = _reshape_static_coefficients(stored.reshape(12, 2), [3, 4], "psi_0")
+    assert np.array_equal(flat, out)
+    # 3D: (n_z, n_y, n_x)
+    s3 = np.random.default_rng(0).random((5, 4, 3, 2))
+    o3 = _reshape_static_coefficients(s3, [3, 4, 5], "psi_0")
+    assert o3.shape == (3, 4, 5, 2) and o3[2, 1, 4, 1] == s3[4, 1, 2, 1]
 
     with pytest.raises(ValueError, match="incompatible"):
         _reshape_static_coefficients(np.zeros((3, 2)), [3, 4], "psi_0")
