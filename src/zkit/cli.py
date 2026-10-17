@@ -213,6 +213,49 @@ def cmd_compare_scid(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_vtk(args: argparse.Namespace) -> int:
+    from zkit import Run
+    from zkit.viz.vtk import export_evolution, export_states
+
+    run = Run(args.run_dir, args.basename)
+    out = Path(args.outdir or Path(args.run_dir) / "vtk")
+    did = False
+    if not args.no_states and run.path("eigen").exists():
+        try:
+            states = [int(v) for v in args.states.split(",")] if args.states else None
+            files = export_states(run, out, states=states, npoints=args.npoints, fields=args.fields)
+            print(f"wrote {len(files)} state file(s) to {out}")
+            did = True
+        except ValueError as err:  # no saved states
+            print(f"states: {err}")
+    if not args.no_evolution and run.path("wfs").exists():
+        pvd = export_evolution(run, out, every=args.every, npoints=args.npoints, fields=args.fields)
+        print(f"wrote {pvd} and {pvd.with_suffix('.visit')}")
+        did = True
+    if not did:
+        print("nothing to export: need static/<name>_eigen.h5 with NBoundStatesSave = 1 or td/<name>_wfs.h5")
+        return 1
+    if args.render:
+        from zkit.viz.paraview import render
+
+        for f in sorted(out.glob(f"{run.name}_state*.vti")) if not args.no_states else []:
+            print(f"wrote {render(f, out / 'images' / (f.stem + '.png'), size=args.size)}")
+        pvd = out / f"{run.name}_wfs.pvd"
+        if pvd.exists() and not args.no_evolution:
+            print(f"wrote {render(pvd, out / (run.name + '.mp4'), size=args.size, fps=args.fps, orbit=args.orbit)}")
+    return 0
+
+
+def cmd_render(args: argparse.Namespace) -> int:
+    from zkit.viz.paraview import render
+
+    iso = [float(v) for v in args.iso.split(",")] if args.iso else []
+    out = render(args.source, args.out, decades=args.decades, size=args.size, movie=not args.no_movie,
+                 fps=args.fps, orbit=args.orbit, iso=iso, pvpython=args.pvpython)
+    print(f"wrote {out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read TDSEZ simulation outputs.")
     parser.add_argument("--run-dir", default=".", help="Run directory containing td/ and static/")
@@ -305,6 +348,34 @@ def main(argv: list[str] | None = None) -> int:
     p_cmp.add_argument("--prefix", default="scid", help="Output filename prefix")
     p_cmp.add_argument("--dpi", type=int, default=180, help="Figure DPI")
 
+    p_vtk = subparsers.add_parser(
+        "vtk", help="Export states and wavefunction snapshots to VTK (.vti/.pvd/.visit) for ParaView/VisIt"
+    )
+    p_vtk.add_argument("basename", help="Input basename such as circ2d.inp (run in --run-dir)")
+    p_vtk.add_argument("--outdir", default=None, help="Output directory (default: <run-dir>/vtk)")
+    p_vtk.add_argument("--npoints", type=int, default=160, help="Grid points per axis")
+    p_vtk.add_argument("--every", type=int, default=1, help="Use every n-th snapshot")
+    p_vtk.add_argument("--states", default=None, help="Comma-separated state indices (default: all saved)")
+    p_vtk.add_argument("--fields", default="default",
+                       help="default (density, log10_density, potential), all, or a comma list")
+    p_vtk.add_argument("--no-states", action="store_true", help="Skip the eigenstates")
+    p_vtk.add_argument("--no-evolution", action="store_true", help="Skip the snapshots")
+    p_vtk.add_argument("--render", action="store_true", help="Also render images and the movie with ParaView")
+    p_vtk.add_argument("--size", type=int, nargs=2, default=(1280, 1024), help="Image size in pixels")
+    p_vtk.add_argument("--fps", type=int, default=15, help="Movie frame rate")
+    p_vtk.add_argument("--orbit", action="store_true", help="3D: orbit the camera over the movie")
+
+    p_ren = subparsers.add_parser("render", help="Render a .vti (PNG) or a .pvd/.visit series (MP4) with ParaView")
+    p_ren.add_argument("source", help="A .vti file or a .pvd/.visit series written by 'zkit vtk'")
+    p_ren.add_argument("--out", default=None, help="Output .png or .mp4 (default: next to the source)")
+    p_ren.add_argument("--decades", type=float, default=6.0, help="Colour range in decades below the maximum")
+    p_ren.add_argument("--size", type=int, nargs=2, default=(1280, 1024), help="Image size in pixels")
+    p_ren.add_argument("--fps", type=int, default=15, help="Movie frame rate")
+    p_ren.add_argument("--no-movie", action="store_true", help="Frames only, no MP4")
+    p_ren.add_argument("--orbit", action="store_true", help="3D: orbit the camera over the series")
+    p_ren.add_argument("--iso", default="1,2.5,4", help="3D isosurfaces, decades below the maximum ('' for none)")
+    p_ren.add_argument("--pvpython", default=None, help="Path to ParaView's pvpython")
+
     args = parser.parse_args(argv)
     if args.command == "summary":
         return cmd_summary(args)
@@ -320,6 +391,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_pes(args)
     if args.command == "compare-scid":
         return cmd_compare_scid(args)
+    if args.command == "vtk":
+        return cmd_vtk(args)
+    if args.command == "render":
+        return cmd_render(args)
 
     parser.print_help()
     return 1
