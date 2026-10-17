@@ -3,6 +3,7 @@
 from zkit.io.base import detect_dimension
 from zkit.io.eigen import read_eigen
 from zkit.io.evolution import read_evolution
+from zkit.io.kh import read_kh, read_multipole
 from zkit.io.scid import read_scid_detail, read_scid_field, read_scid_pes
 from zkit.io.surff import read_surff
 from zkit.io.tdm import (
@@ -20,6 +21,8 @@ from zkit.io.wfs_field import (
 )
 
 __all__ = [
+    "read_kh",
+    "read_multipole",
     "read_evolution",
     "read_eigen",
     "read_timeseries",

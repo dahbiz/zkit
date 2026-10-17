@@ -101,3 +101,31 @@ def test_bundled_igakit_evaluator_preserves_partition_of_unity() -> None:
     values = bsp.Evaluate1(2, knots, control_points, np.linspace(0.0, 1.0, 9))[:, 0]
 
     assert values == pytest.approx(np.ones(9))
+
+
+def test_read_kh_and_multipole(tmp_path):
+    """run_metadata of a Mode = kh, Multipole = 2 eigen file -> KHQuiver, MultipoleInfo."""
+    import h5py
+
+    from zkit.io import read_kh, read_multipole
+
+    p = tmp_path / "kh_eigen.h5"
+    t = np.linspace(0.1, 6.2, 8)
+    w = np.full(8, 1 / 8)
+    al = np.stack([np.sin(t), 0.01 * np.sin(2 * t), 0 * t], 1)
+    with h5py.File(p, "w") as f:
+        g = f.create_group("run_metadata")
+        g["kh_times"], g["kh_weights"], g["kh_alpha"] = t, w, al
+        g.attrs.update({"KH_window_start": 0.0, "KH_window_end": 6.3, "KH_omega": 1.0, "Multipole": 2,
+                        "PropagationDirection_x": 0.0, "PropagationDirection_y": 1.0, "PropagationDirection_z": 0.0,
+                        "SpeedOfLight": 137.0, "MultipoleMagnetic": 1})
+    kh = read_kh(p)
+    assert kh.alpha.shape == (8, 3) and np.allclose(kh.alpha, al) and kh.window == (0.0, 6.3)
+    x = np.linspace(-1, 1, 5)
+    assert np.allclose(kh.average(lambda xx: xx, x), x + w @ al[:, 0])
+    mp = read_multipole(p)
+    assert mp.order == 2 and mp.direction == (0.0, 1.0, 0.0) and mp.speed_of_light == 137.0 and mp.magnetic
+    q = tmp_path / "old.h5"
+    with h5py.File(q, "w") as f:
+        f.create_group("run_metadata")
+    assert read_multipole(q).order is None

@@ -194,7 +194,44 @@ class ScidSpectrum:
         return np.abs(self.amplitude) ** 2
 
 
+@dataclass(frozen=True)
+class KHQuiver:
+    """Quiver path of a ``Mode = kh`` run (``run_metadata`` of the eigen file).
+
+    ``alpha[k]`` is the displacement (x, y, z) at ``times[k]``; ``weights`` are
+    the Gauss-Legendre cycle-average weights (sum 1), so V_KH(r) is
+    ``sum_k weights[k] * V(r + alpha[k])``. With ``Multipole = 2`` the component
+    along the propagation direction is the 1/c figure-eight.
+    """
+
+    times: np.ndarray  # (N,)
+    weights: np.ndarray  # (N,)
+    alpha: np.ndarray  # (N, 3)
+    window: tuple  # (t0, t1)
+    omega: float
+
+    def average(self, potential, *coords: np.ndarray) -> np.ndarray:
+        """Cycle average <V(r + alpha(t))> of ``potential(x[, y[, z]])`` on ``coords``."""
+        out = 0.0
+        for w, a in zip(self.weights, self.alpha):
+            out = out + w * potential(*(c + a[i] for i, c in enumerate(coords)))
+        return out
+
+
+@dataclass(frozen=True)
+class MultipoleInfo:
+    """Plane-wave coupling of a run: order 1 (dipole), 2 (1/c) or 3 (1/c^2);
+    None for files written before TDSE-Z recorded it."""
+
+    order: Optional[int] = 1
+    direction: tuple = (0.0, 0.0, 0.0)  # normalised n, order >= 2
+    speed_of_light: float = 137.035999084
+    magnetic: bool = True
+
+
 __all__ = [
+    "KHQuiver",
+    "MultipoleInfo",
     "SimulationMeta",
     "TimeEvolution",
     "EigenData",

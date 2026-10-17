@@ -13,11 +13,14 @@ if TYPE_CHECKING:
 from zkit.io.base import detect_dimension
 from zkit.io.eigen import read_eigen
 from zkit.io.evolution import read_evolution
+from zkit.io.kh import read_kh, read_multipole
 from zkit.io.surff import read_surff
 from zkit.io.ts import read_timeseries
 from zkit.io.wavefunction import read_wfs
 from zkit.models import (
     EigenData,
+    KHQuiver,
+    MultipoleInfo,
     SimulationMeta,
     SurffSpectrum,
     TimeEvolution,
@@ -116,6 +119,16 @@ class Run:
             path = self.path("wfs")
             self._wavefunctions = read_wfs(path)
         return self._wavefunctions
+
+    @property
+    def kh(self) -> "KHQuiver":
+        """Quiver of a ``Mode = kh`` run (times, weights, alpha (N, 3), window, omega)."""
+        return read_kh(self.path("eigen"))
+
+    @property
+    def multipole(self) -> "MultipoleInfo":
+        """Plane-wave coupling order, direction n, c and magnetic flag of the run."""
+        return read_multipole(self.path("eigen"))
 
     @property
     def surff(self) -> SurffSpectrum:
