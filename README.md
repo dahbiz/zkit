@@ -160,21 +160,4 @@ BSD license is in `src/igakit/LICENSE.rst`.
   <img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/UKRI_EPSR_Council-Logo_Horiz-RGB.png" alt="UKRI Engineering and Physical Sciences Research Council" width="220" />
 </p>
 
-## Releases
-
-`zkit` is published on PyPI as `zkit-lib` by `.github/workflows/publish.yml`
-(trusted publishing, no stored token). To release, set `__version__` in
-`src/zkit/_version.py`, commit, then tag it with the same version:
-
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-```
-
-The workflow checks that the tag matches `__version__`, builds the sdist and
-wheel, runs the tests against the installed wheel (Python 3.10 and 3.13) and
-publishes to PyPI. Running the workflow by hand (Actions > Publish zkit-lib >
-Run workflow) publishes to TestPyPI instead. One-time set-up: add a pending
-trusted publisher for the project `zkit-lib` (repository `dahbiz/zkit`,
-workflow `publish.yml`, environment `pypi`; on test.pypi.org environment
-`testpypi`) and create the GitHub environments `pypi` and `testpypi`.
 
