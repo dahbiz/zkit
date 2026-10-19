@@ -35,6 +35,15 @@ B-spline reconstruction is part of the core package (a bundled pure-Python
 Install
 -------
 
+From PyPI (distribution ``zkit-lib``):
+
+.. code-block:: bash
+
+   pip install zkit-lib                       # core: numpy, h5py
+   pip install "zkit-lib[viz,validation]"     # with optional features
+
+The latest development version, from GitHub:
+
 .. code-block:: bash
 
    pip install "git+https://github.com/dahbiz/zkit.git"
@@ -47,8 +56,11 @@ or, from a clone (editable, with optional features):
    cd zkit
    pip install -e ".[viz,validation]"
 
-The distribution name is ``zkit-lib``; the import name and the command are
-``zkit``.
+The distribution name on PyPI is ``zkit-lib`` (``zkit`` is a different
+project there); the import name and the command are ``zkit``:
+``pip install zkit-lib``, then ``import zkit`` and ``zkit --help``.
+
+Upgrade with ``pip install --upgrade zkit-lib``.
 
 Without installing
 ------------------

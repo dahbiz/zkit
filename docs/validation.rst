@@ -9,7 +9,7 @@ physics unchanged.
 
 .. code-block:: bash
 
-   pip install -e ".[validation]"      # from a clone of the zkit repository
+   pip install "zkit-lib[validation]"         # or pip install -e ".[validation]" in a clone
    export TDSEZ_BINARY=/path/to/tdsez.x
    zkit validate --quick                      # 2D cases, about 20 s
    zkit validate --np 8                       # all cases, about 10 min

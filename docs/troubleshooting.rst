@@ -21,7 +21,19 @@ if the module is missing:
 
 .. code-block:: bash
 
-   pip install -e .
+   pip install --force-reinstall zkit-lib     # from PyPI
+   pip install -e .                           # or, in a clone
+
+``pip install zkit`` installs an unrelated project
+--------------------------------------------------
+
+The PyPI name of this package is ``zkit-lib``. Remove the other one and
+install the right one:
+
+.. code-block:: bash
+
+   pip uninstall zkit
+   pip install zkit-lib
 
 ``plot_wavefunction(..., vtk=...)`` fails
 -----------------------------------------
