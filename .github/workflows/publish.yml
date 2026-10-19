@@ -1,0 +1,110 @@
+name: Publish zkit-lib
+
+# Releases of the zkit package to PyPI as "zkit-lib" (import name: zkit).
+#
+#   git tag v0.1.0 && git push origin v0.1.0     -> build, test, publish to PyPI
+#   Actions > Publish zkit-lib > Run workflow    -> build, test, publish to TestPyPI
+#
+# Publishing uses PyPI trusted publishing (OpenID Connect): no API token is
+# stored in GitHub. One-time set-up on pypi.org and test.pypi.org:
+#   Account > Publishing > Add a new pending publisher
+#     PyPI project name: zkit-lib, owner: dahbiz, repository: zkit,
+#     workflow: publish.yml, environment: pypi (test.pypi.org: testpypi)
+# and in GitHub: Settings > Environments > new environments "pypi" and "testpypi".
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build twine
+      - name: Check that the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(python -c "import re; print(re.search(r'__version__ = \"(.+?)\"', open('src/zkit/_version.py').read()).group(1))")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "package $version, tag $tag"
+          test "$version" = "$tag" || { echo "::error::tag v$tag does not match __version__ $version in src/zkit/_version.py"; exit 1; }
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Check the distributions
+        run: python -m twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  test-wheel:
+    # the built wheel (not the source tree) must install and pass the tests
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Install the wheel with the test extras
+        run: |
+          python -m pip install --upgrade pip
+          wheel=$(ls dist/*.whl)
+          python -m pip install "${wheel}[test]"
+      - name: Run the tests against the installed package
+        run: |
+          mv src src.unused          # import zkit from site-packages, not the checkout
+          python -c "import zkit, sys; print(zkit.__file__); sys.exit('src' in zkit.__file__)"
+          pytest -q
+          zkit --help
+
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test-wheel
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/zkit-lib
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test-wheel
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/zkit-lib
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
