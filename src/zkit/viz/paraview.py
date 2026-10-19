@@ -73,7 +73,6 @@ for t in times:
     r = reader.PointData["log10_density"].GetRange()
     top = max(top, r[1])
 lo = top - decades
-
 disp = Show(reader, view)
 ColorBy(disp, ("POINTS", "log10_density"))
 lut = GetColorTransferFunction("log10_density")
@@ -101,8 +100,24 @@ if dim <= 2:
     view.CameraParallelProjection = 1
 else:
     disp.Representation = "Volume"
-    pwf.Points = [lo, 0.0, 0.5, 0.0, lo + 0.45 * decades, 0.01, 0.5, 0.0,
-                  lo + 0.8 * decades, 0.2, 0.5, 0.0, top, 0.85, 0.5, 0.0]
+    pwf.Points = [
+        lo,
+        0.0,
+        0.5,
+        0.0,
+        lo + 0.45 * decades,
+        0.01,
+        0.5,
+        0.0,
+        lo + 0.8 * decades,
+        0.2,
+        0.5,
+        0.0,
+        top,
+        0.85,
+        0.5,
+        0.0,
+    ]
     colours = [[1.0, 0.97, 0.75], [0.98, 0.55, 0.18], [0.62, 0.22, 0.65], [0.25, 0.35, 0.85]]
     alphas = [0.55, 0.3, 0.16, 0.08]
     for j, d in enumerate(iso):
@@ -190,9 +205,23 @@ def render(
     png = out if out and out.suffix == ".png" else (stem.parent / "frames" / (stem.name + ".png"))
     script = png.parent / (stem.name + "_render.py")
     png.parent.mkdir(parents=True, exist_ok=True)
-    script.write_text(_SCRIPT.format(src=str(source), png=str(png), dim=dim, decades=float(decades),
-                                     size=list(size), orbit=bool(orbit), iso=list(iso), label=_label(source, dim)))
-    r = subprocess.run([find_pvpython(pvpython), str(script)], capture_output=True, text=True)
+    script.write_text(
+        _SCRIPT.format(
+            src=str(source),
+            png=str(png),
+            dim=dim,
+            decades=float(decades),
+            size=list(size),
+            orbit=bool(orbit),
+            iso=list(iso),
+            label=_label(source, dim),
+        )
+    )
+    r = subprocess.run(
+        [find_pvpython(pvpython), str(script)],
+        capture_output=True,
+        text=True,
+    )
     if r.returncode:
         raise RuntimeError(f"pvpython failed ({script}):\n{r.stdout[-2000:]}\n{r.stderr[-2000:]}")
     frames = sorted(png.parent.glob(png.stem + "_*.png"))
@@ -200,10 +229,28 @@ def render(
         return png
     if movie and shutil.which("ffmpeg"):
         mp4.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps),
-                        "-i", str(png.parent / (png.stem + "_%05d.png")),
-                        "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                        "-crf", "18", str(mp4)], check=True)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-framerate",
+                str(fps),
+                "-i",
+                str(png.parent / (png.stem + "_%05d.png")),
+                "-vf",
+                "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-crf",
+                "18",
+                str(mp4),
+            ],
+            check=True,
+        )
         return mp4
     return frames[0].parent
 
@@ -240,3 +287,4 @@ def _dimension(source: Path) -> int:
 
 
 __all__ = ["find_pvpython", "render"]
+
