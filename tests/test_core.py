@@ -116,16 +116,32 @@ def test_read_kh_and_multipole(tmp_path):
     with h5py.File(p, "w") as f:
         g = f.create_group("run_metadata")
         g["kh_times"], g["kh_weights"], g["kh_alpha"] = t, w, al
-        g.attrs.update({"KH_window_start": 0.0, "KH_window_end": 6.3, "KH_omega": 1.0, "Multipole": 2,
-                        "PropagationDirection_x": 0.0, "PropagationDirection_y": 1.0, "PropagationDirection_z": 0.0,
-                        "SpeedOfLight": 137.0, "MultipoleMagnetic": 1})
+        g.attrs.update(
+            {
+                "KH_window_start": 0.0,
+                "KH_window_end": 6.3,
+                "KH_omega": 1.0,
+                "Multipole": 2,
+                "PropagationDirection_x": 0.0,
+                "PropagationDirection_y": 1.0,
+                "PropagationDirection_z": 0.0,
+                "SpeedOfLight": 137.0,
+                "MultipoleMagnetic": 1,
+            }
+        )
     kh = read_kh(p)
     assert kh.alpha.shape == (8, 3) and np.allclose(kh.alpha, al) and kh.window == (0.0, 6.3)
     x = np.linspace(-1, 1, 5)
     assert np.allclose(kh.average(lambda xx: xx, x), x + w @ al[:, 0])
     mp = read_multipole(p)
-    assert mp.order == 2 and mp.direction == (0.0, 1.0, 0.0) and mp.speed_of_light == 137.0 and mp.magnetic
+    assert (
+        mp.order == 2
+        and mp.direction == (0.0, 1.0, 0.0)
+        and mp.speed_of_light == 137.0
+        and mp.magnetic
+    )
     q = tmp_path / "old.h5"
     with h5py.File(q, "w") as f:
         f.create_group("run_metadata")
     assert read_multipole(q).order is None
+

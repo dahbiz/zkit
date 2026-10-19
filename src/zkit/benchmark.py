@@ -218,3 +218,4 @@ def plot_comparison(
 
 
 __all__ = ["ScidComparison", "compare_with_scid", "plot_comparison"]
+
